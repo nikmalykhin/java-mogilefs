@@ -1,0 +1,27 @@
+# Gradle build output
+/build/
+/build.gradle
+/gradle/
+/.gradle/
+
+# Ant build output
+/dist/
+*.class
+*.jar
+
+# IDE files
+/.idea/
+*.iml
+*.ipr
+*.iws
+/.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Misc
+lib/*.jar
