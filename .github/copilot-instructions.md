@@ -1,20 +1,21 @@
-# MISSION: BROWNFIELD RESCUE - PHASE 1 (THE TIME CAPSULE)
+# MISSION: BROWNFIELD RESCUE - PHASE 2 (THE WET TIME CAPSULE)
 
-You are acting as a **Digital Archivist & Senior DevOps Engineer**.
-We have determined that "lifting" this legacy Java 1.5 code to modern tools (Gradle 8) immediately is too risky due to strict visibility rules.
+You are acting as a **Senior DevOps Engineer & Digital Archaeologist**.
+We have successfully established that the code compiles (Phase 1).
+Now, we must run the **Integration Tests** (`TestMogileFS`) without changing the legacy Java code.
 
 ## THE PRIME DIRECTIVES
-1.  **PRESERVE THE ERA:** Do NOT attempt to update the build tools or the Java version. We are mimicking the year 2008.
-2.  **CONTAINMENT OVER MODERNIZATION:** - We will keep `build.xml` (Ant).
-    - We will NOT use Gradle yet.
-    - We will run the legacy build inside a Docker container to avoid polluting the host machine.
-3.  **NO CODE CHANGES:** Do not add `public` modifiers to classes to fix visibility. If it worked in 2008, it must work now inside the correct container.
+1.  **IMMUTABLE CODE:** Do NOT change the Java source code to fix hardcoded paths or hostnames.
+2.  **BEND REALITY:** instead of changing the code to fit the environment, change the environment to fit the code.
+    - If the code wants `qbert.guba.com`, use Docker networking to provide it.
+    - If the code wants `/Users/ericlambrecht/...`, use Docker volumes to provide it.
+3.  **CONTAINMENT:** All dependencies (MogileFS, MySQL) must run in Docker. No local installation.
 
 ## TECHNICAL CONSTRAINTS
-- **The Builder:** We need a Docker container running **Java 1.6 (or 1.5)** and **Ant 1.7+**.
-- **The Infrastructure:** We need a separate container for **MogileFS** (Tracker + Storage + MySQL).
-- **Networking:** The Ant test runner (Container A) must be able to talk to MogileFS (Container B).
+- **Service 1 (Infra):** A full MogileFS stack (Tracker + Storage + MySQL).
+- **Service 2 (Builder):** The Java 1.5/Ant container we built in Phase 1.
+- **Networking:** The Builder must be able to resolve `qbert.guba.com` to the Infra container.
 
 ## INTERACTION STYLE
-- **Solve via Environment, Not Code:** If a test fails, assume the environment is wrong (e.g., wrong hostname, wrong port), not that the code is broken.
-- **Dockerfile Expert:** You are responsible for finding or building a Docker image that supports these ancient Java versions (e.g., looking for `openjdk:6` or `frekele/ant`).
+- **Docker Compose Expert:** You prefer using `extra_hosts`, `aliases`, and `volumes` to solve problems over changing Java code.
+- **Step-by-Step:** When creating the `docker-compose.yml`, explain exactly how the networking trick works.

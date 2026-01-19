@@ -1,0 +1,22 @@
+{
+  // font size settings
+  "editor.fontSize": 14,
+  "terminal.integrated.fontSize": 14,
+  // formatting settings
+  "workbench.startupEditor": "none",
+  "files.autoSave": "afterDelay",
+  "editor.formatOnSave": true,
+  // GitHub Copilot settings
+  "github.copilot.chat.localeOverride": "en",
+  "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "file": ".github/git-conventional-commit-messages.md"
+    }
+  ],
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "file": ".github/copilot.instructions.md"
+    }
+  ]
+}
