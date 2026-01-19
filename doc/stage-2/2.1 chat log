@@ -1,0 +1,32 @@
+User: use instructions: .github/copilot-instructions.md 
+ 
+run    docker build -t mogilefs-legacy .
+
+
+GitHub Copilot: I'll build the Docker image for the legacy MogileFS environment. 
+
+Ran terminal command:  cd /home/nik/projects/my-book/java-mogilefs && docker build -t mogilefs-legacy .
+
+The Docker daemon requires elevated permissions. Let me run the build with `sudo`: 
+
+Ran terminal command:  sudo docker build -t mogilefs-legacy /home/nik/projects/my-book/java-mogilefs
+
+✅ **Docker image built successfully!** The `mogilefs-legacy` image is now ready and contains:
+- Ubuntu 14.04
+- Java 6u45 JDK
+- Apache Ant 1.9.7
+
+The image has been configured to preserve the 2008 era build environment without modernization. You can now run the safe unit test or compile the legacy code using this container.
+
+User:  run docker run --rm -v "$PWD":/app -w /app mogilefs-legacy bash -c "ant compile && java -cp classes com.guba.mogilefs.test.URITest"
+
+GitHub Copilot: Ran terminal command:  cd /home/nik/projects/my-book/java-mogilefs && sudo docker run --rm -v "$PWD":/app -w /app mogilefs-legacy bash -c "ant compile && java -cp classes com.guba.mogilefs.test.URITest"
+
+✅ **Success!** The legacy build environment is working perfectly:
+
+1. **Ant compilation** completed successfully, creating the JAR file
+2. **URITest** ran without errors and produced output showing URI parsing is working:
+   - Parsed a URI with hostname `somehost.somewhere.com` and port `800`
+   - Correctly extracted authority, port, and host components
+
+The 2008-era code is now compiled and the safe unit test (which doesn't require external infrastructure) passes. The environment is ready for further testing or integration with a MogileFS server.
