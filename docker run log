@@ -1,0 +1,16 @@
+➜  java-mogilefs  cd /java-mogilefs && docker run --rm -v "$PWD":/app -w /app mogilefs-legacy bash -c "ant compil
+e && java -cp classes com.guba.mogilefs.test.URITest"
+Buildfile: /app/build.xml
+
+compile:
+    [mkdir] Created dir: /app/classes
+    [javac] /app/build.xml:24: warning: 'includeantruntime' was not set, defaulting to build.sysclasspath=last; set to false for repeatable builds
+    [javac] Compiling 19 source files to /app/classes
+      [jar] Building jar: /app/mogilefs-1.1.jar
+
+BUILD SUCCESSFUL
+Total time: 0 seconds
+ parsed //somehost.somewhere.com:800
+ authority is somehost.somewhere.com:800
+ port is 800
+ host is somehost.somewhere.com
