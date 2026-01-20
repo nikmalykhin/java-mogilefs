@@ -2,6 +2,7 @@ services:
   # Service 1: MogileFS Infrastructure (Tracker + Storage + MySQL)
   mogilefs-infra:
     image: hrchu/mogilefs-all-in-one:latest
+    platform: linux/amd64
     container_name: mogilefs-infra
     networks:
       mogilefs-net:
