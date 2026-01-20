@@ -1,7 +1,13 @@
 # Gradle build output
 /build/
 /build.gradle
-/gradle/
+
+# Gradle wrapper - strategy:
+# - gradle/wrapper/gradle-wrapper.jar is committed (52KB, needed for wrapper)
+# - gradle/wrapper/gradle-wrapper.properties is committed (config file)
+# - gradle/wrapper/dists/ is NOT committed but CAN be pre-cached locally
+#   See GRADLE-BRIDGE-CHEATSHEET.md: Build Performance > Pre-Caching
+/gradle/wrapper/dists/
 /.gradle/
 
 # Ant build output

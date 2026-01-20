@@ -1,0 +1,15 @@
+FROM gradle:7.6.0-jdk8
+
+# Install additional tools if needed
+RUN apt-get update && \
+    apt-get install -y netcat-traditional && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy entrypoint script
+COPY infra/docker-entrypoint.sh /
+RUN chmod +x /docker-entrypoint.sh
+
+WORKDIR /app
+
+# The Gradle wrapper will be initialized from the build.gradle
+ENTRYPOINT ["/docker-entrypoint.sh"]

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Full test automation script
 # Orchestrates: cleanup → start infra → init domain → run tests → cleanup
-# Cleans up on success or failure
+# Updated for Gradle 7.6 bridge (Phase 3.1+)
 
 set -e  # Exit on any error
 
@@ -9,7 +9,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INFRA_DIR="$PROJECT_ROOT/infra"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Phase 2: Full Integration Test Suite"
+echo "Phase 3.1+: Full Integration Test Suite (Gradle Bridge)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Cleanup function - always runs on exit
@@ -27,7 +27,7 @@ cleanup() {
     
     cd "$INFRA_DIR"
     echo "Removing containers and volumes..."
-    sudo docker compose down -v 2>/dev/null || true
+    docker compose down -v 2>/dev/null || true
     
     echo "✓ Cleanup complete"
     echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -39,16 +39,23 @@ trap cleanup EXIT
 
 # Step 1: Cleanup any previous state
 echo ""
-echo "[1/5] Cleaning up previous state..."
+echo "[1/6] Cleaning up previous state..."
 cd "$INFRA_DIR"
-sudo docker compose down -v 2>/dev/null || true
+docker compose down -v 2>/dev/null || true
 echo "✓ Cleanup complete"
 
-# Step 2: Start infrastructure
+# Step 2: Build gradle-bridge image
 echo ""
-echo "[2/5] Starting MogileFS infrastructure..."
+echo "[2/6] Building gradle-bridge Docker image..."
 cd "$INFRA_DIR"
-sudo docker compose up -d mogilefs-infra
+docker compose build gradle-bridge
+echo "✓ Image built"
+
+# Step 3: Start infrastructure
+echo ""
+echo "[3/6] Starting MogileFS infrastructure..."
+cd "$INFRA_DIR"
+docker compose up -d --no-build mogilefs-infra
 echo "✓ Infrastructure started"
 
 # Wait for health check
@@ -56,7 +63,7 @@ echo "Waiting for MogileFS tracker to become healthy..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if sudo docker compose ps mogilefs-infra | grep -q "healthy"; then
+    if docker compose ps mogilefs-infra | grep -q "healthy"; then
         echo "✓ MogileFS tracker is healthy"
         break
     fi
@@ -69,20 +76,21 @@ if [ $attempt -eq $max_attempts ]; then
     exit 1
 fi
 
-# Step 3: Initialize MogileFS domain
+# Step 4: Initialize MogileFS domain
 echo ""
-echo "[3/5] Initializing MogileFS domain..."
+echo "[4/6] Initializing MogileFS domain..."
 cd "$PROJECT_ROOT"
-sudo bash scripts/init-mogilefs.sh
+bash scripts/init-mogilefs.sh
 echo "✓ Domain initialization complete"
 
-# Step 4: Run tests
+# Step 5: Compile with Gradle
 echo ""
-echo "[4/5] Running integration tests..."
+echo "[5/6] Compiling with Gradle 7.6..."
 cd "$INFRA_DIR"
-sudo docker compose run --rm builder bash -c \
-    "ant compile && java -cp classes:lib/* com.guba.mogilefs.test.URITest && java -cp classes:lib/* com.guba.mogilefs.test.TestMogileFS"
+docker compose run --rm gradle-bridge gradle compile
+echo "✓ Compilation complete"
 
+# Step 6: Run integration tests (Phase 3.2 - not yet implemented)
 echo ""
-echo "[5/5] Test execution complete"
-echo "✓ All tests passed!"
+echo "[6/6] Integration tests not yet implemented (Phase 3.2)..."
+echo "✓ Phase 3.1 verification complete!"

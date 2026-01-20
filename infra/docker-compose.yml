@@ -25,12 +25,12 @@ services:
       retries: 12
       start_period: 15s
 
-  # Service 2: Legacy Java Builder & Test Runner
-  builder:
+  # Service 2: Gradle 7.6 Bridge (Modern build for legacy code)
+  gradle-bridge:
     build:
       context: ..
-      dockerfile: infra/Dockerfile
-    container_name: java-mogilefs-builder
+      dockerfile: infra/Dockerfile.gradle
+    container_name: gradle-mogilefs-bridge
     networks:
       - mogilefs-net
     depends_on:
