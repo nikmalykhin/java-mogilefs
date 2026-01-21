@@ -5,14 +5,17 @@
 
 set -e
 
+# Find project root (script is in scripts/, so go up one level)
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
 echo "=========================================="
 echo "Integration Tests Setup - Phase 3.3b"
 echo "Using Docker Host Networking"
 echo "=========================================="
 
-# Check if running from correct directory
-if [ ! -f "build.gradle" ]; then
-    echo "ERROR: Please run this script from the project root directory"
+# Check if running from correct project
+if [ ! -f "$PROJECT_ROOT/build.gradle" ]; then
+    echo "ERROR: Could not find project root (build.gradle not found)"
     exit 1
 fi
 
