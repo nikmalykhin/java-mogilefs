@@ -32,7 +32,7 @@ import org.apache.log4j.Logger;
  * @author eml
  * @based-on the Backend class in the Perl API
  */
-class Backend {
+public class Backend {
 
     private static Logger log = Logger.getLogger(Backend.class);
 
@@ -61,9 +61,9 @@ class Backend {
      * one is available right off the bat.
      * 
      * @param hostStrings
-     *            Array of hostnames of trackers
+     *                    Array of hostnames of trackers
      * @param connect
-     *            if true, try to connect to a socket
+     *                    if true, try to connect to a socket
      * 
      * @throws NoTrackersException
      * @throws BadHostFormatException
@@ -101,7 +101,6 @@ class Backend {
             cachedSocket = getSocket();
     }
 
- 
     /**
      * Randomly pick from our list of hosts and try to connect to one of them.
      * If we get an error connecting to a host, then make a note that it is
@@ -140,21 +139,21 @@ class Backend {
                 if (log.isDebugEnabled()) {
                     log.debug("connected to tracker " + socket.getInetAddress().getHostName());
                 }
-                
+
                 // if we made it here, then the connection is good!
                 return new SocketWithReaderAndWriter(socket);
 
             } catch (IOException e) {
                 log.warn("Unable to connect to tracker at " +
-                 host.toString(), e);
+                        host.toString(), e);
 
             } catch (IllegalBlockingModeException e) {
                 log.warn("Unable to connect to tracker at " +
-                 host.toString(), e);
+                        host.toString(), e);
 
             } catch (IllegalArgumentException e) {
                 log.warn("Unable to connect to tracker " + host.toString(),
-                 e);
+                        e);
 
             }
 
@@ -173,11 +172,11 @@ class Backend {
      * });
      * 
      * @throws NoTrackersException
-     *             thrown if we can't get ahold of a tracker
+     *                             thrown if we can't get ahold of a tracker
      * @param command
      * @param args
-     *            Optional arguments. May be null. This is a hash mapped to an
-     *            array of strings.
+     *                Optional arguments. May be null. This is a hash mapped to an
+     *                array of strings.
      * @return null on error, otherwise results of command
      */
 
@@ -192,9 +191,9 @@ class Backend {
         String request = command + " " + argString + "\r\n";
 
         if (log.isDebugEnabled()) {
-            log.debug("command: "+ request);
+            log.debug("command: " + request);
         }
-        
+
         if (cachedSocket != null) {
             // try our cached socket, but assume it might be bogus
             try {
@@ -240,7 +239,7 @@ class Backend {
             if (log.isDebugEnabled()) {
                 log.debug("response: " + response);
             }
-            
+
             Matcher ok = OK_PATTERN.matcher(response);
             if (ok.matches()) {
                 // good response
@@ -267,11 +266,12 @@ class Backend {
         } catch (IOException e) {
             // problem reading the response
             log.warn("problem reading response from server (" +
-             cachedSocket.getSocket().getInetAddress() + ")", e);
+                    cachedSocket.getSocket().getInetAddress() + ")", e);
 
             throw new TrackerCommunicationException(
                     "problem talking to server at "
-                            + cachedSocket.getSocket().getInetAddress(), e);
+                            + cachedSocket.getSocket().getInetAddress(),
+                    e);
         }
     }
 
@@ -366,7 +366,7 @@ class Backend {
                 String pair[] = parts[i].split("=");
 
                 if ((pair == null) || (pair.length != 2)) {
-                    log.error("poorly encoded string: "+ encoded);
+                    log.error("poorly encoded string: " + encoded);
                     continue;
                 }
 
@@ -381,26 +381,26 @@ class Backend {
             return null;
         }
     }
-    
+
     /**
      * Retrieve the name of the tracker we're talking
      * to. Might return null.
      * 
      * @return
      */
-    
+
     public String getTracker() {
         if (cachedSocket == null)
             return null;
-        
+
         return cachedSocket.getTracker();
     }
-    
+
     /**
      * Close any open connections we've got
      * 
      */
-    
+
     public void destroy() {
         if (cachedSocket != null) {
             try {
@@ -410,19 +410,19 @@ class Backend {
             }
         }
     }
-    
+
     /**
      * Return true if we're connected to a remote backend
      */
-    
+
     public boolean isConnected() {
-    	return ((cachedSocket != null) && (cachedSocket.getSocket().isConnected()));
+        return ((cachedSocket != null) && (cachedSocket.getSocket().isConnected()));
     }
 }
 
 /**
  * @author ericlambrecht
- *  
+ * 
  */
 
 class SocketWithReaderAndWriter {
@@ -464,26 +464,26 @@ class SocketWithReaderAndWriter {
     /**
      * Make sure the socket is closed
      */
-    
+
     public void close() {
-    	if (socket != null) {
-    		try {
-    			socket.close();
-    		} catch (IOException e) {
-    			// ignore
-    		}
-    	}
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
     }
-    
+
     /**
      * Make sure we close out any open connections
      * 
      */
-    
+
     protected void finalize() {
-    	close();
+        close();
     }
-    
+
     /**
      * Return the name of the tracker we're talking to
      * 

@@ -12,8 +12,8 @@ This is a **complete Docker-based solution** that:
 - ✅ Runs it against a live MogileFS backend
 - ✅ Works without modifying any source code
 - ✅ Handles hardcoded hostnames and file paths transparently
-- ✅ Uses Docker networking tricks to simulate the original developer's environment
-- ✅ Provides both Ant (legacy) and Gradle (modern) build systems
+- ✅ Uses Docker host networking to simulate the original developer's environment
+- ✅ Automatic infrastructure setup and cleanup
 
 ## Quick Start
 
@@ -22,7 +22,7 @@ This is a **complete Docker-based solution** that:
 One command runs the full integration test suite with automatic cleanup:
 
 ```bash
-sudo bash scripts/run-full-test.sh
+bash scripts/run-full-test.sh
 ```
 
 This will:
@@ -44,8 +44,8 @@ To test URI parsing without needing a live MogileFS server:
 
 ```bash
 cd infra
-sudo docker compose build gradle-bridge  # Build the Gradle 8.5 + Java 8 image
-sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+docker compose build gradle-bridge  # Build the Gradle 8.5 + Java 8 image
+docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
 ```
 
 **Expected output:**
@@ -59,7 +59,7 @@ port is 800
 
 ### Option 3: Manual Step-by-Step Workflow
 
-See [QUICK-START.md](QUICK-START.md) for detailed manual instructions.
+See [scripts/README.md](scripts/README.md) for detailed workflow instructions.
 
 ## Architecture Overview
 
@@ -76,36 +76,46 @@ We use **Docker networking and filesystem virtualization**:
 
 **Layer 1 - DNS Resolution**
 
-```dockerfile
-# In docker-entrypoint.sh:
-MOGILEFS_IP=$(getent hosts mogilefs-infra | awk '{ print $1 }')
-echo "$MOGILEFS_IP qbert.guba.com" >> /etc/hosts
+```bash
+# In /etc/hosts (Mac):
+127.0.0.1 qbert.guba.com
 ```
 
-Maps the hardcoded hostname to the container's MogileFS service.
+With host networking, both container and Mac share localhost, so the hardcoded hostname resolves correctly.
 
 **Layer 2 - File Path Mapping**
 
 ```yaml
-# In docker-compose.yml:
+# In docker-compose.yml (gradle-bridge container):
 volumes:
-  - ./java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/guba/MogileFS/PooledMogileFSImpl.java
+  - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
 ```
 
 Bind mounts the file at the exact path the code expects.
 
-**Result:** The code runs unchanged and connects perfectly.
+**Layer 3 - Host Networking**
+
+```yaml
+mogilefs-infra:
+  network_mode: "host"
+
+gradle-bridge:
+  network_mode: "host"
+```
+
+Both containers share the Mac's network stack, so `localhost:7001` means the same thing everywhere.
+
+**Result:** The code runs unchanged and connects perfectly without any port forwarding tricks.
 
 ## Technology Stack
 
-| Component  | Version                      | Purpose                                        |
-| ---------- | ---------------------------- | ---------------------------------------------- |
-| Java       | 1.5 (compiled) / 8 (runtime) | Cross-compilation: Java 5 source on Java 8 JVM |
-| Gradle     | 8.5                          | Modern build system (primary)                  |
-| Apache Ant | 1.9.7                        | Legacy build tool (available for reference)    |
-| MogileFS   | Latest (Docker)              | Distributed file storage backend               |
-| Docker     | v20+                         | Container orchestration                        |
-| Ubuntu     | Latest                       | Base OS for Gradle container                   |
+| Component | Version                      | Purpose                                        |
+| --------- | ---------------------------- | ---------------------------------------------- |
+| Java      | 1.5 (compiled) / 8 (runtime) | Cross-compilation: Java 5 source on Java 8 JVM |
+| Gradle    | 8.5                          | Modern build system                            |
+| MogileFS  | Latest (Docker)              | Distributed file storage backend               |
+| Docker    | v20+                         | Container orchestration                        |
+| Ubuntu    | Latest                       | Base OS for Gradle container                   |
 
 ## Project Structure
 
@@ -113,15 +123,11 @@ Bind mounts the file at the exact path the code expects.
 java-mogilefs/
 ├── README                          # Original MogileFS client docs
 ├── README.md                        # This file (entry point)
-├── QUICK-START.md                  # Quick reference guide
-├── GRADLE-BRIDGE-CHEATSHEET.md     # Phase 3 Gradle reference
 ├── build.gradle                    # Gradle build configuration
-├── build.xml                       # Legacy Ant build (preserved)
 ├── gradlew                         # Gradle wrapper script
 │
 ├── infra/                          # Docker configuration
-│   ├── Dockerfile                  # Java 6 + Ant builder image (legacy)
-│   ├── Dockerfile.gradle           # Java 8 + Gradle 8.5 image (Phase 3.3)
+│   ├── Dockerfile.gradle           # Java 8 + Gradle 8.5 image
 │   ├── docker-entrypoint.sh        # DNS resolution script
 │   ├── docker-compose.yml          # Service orchestration
 │   └── README.md                   # Infrastructure details
@@ -148,9 +154,7 @@ java-mogilefs/
 
 - **Docker** (any recent version)
 - **Docker Compose** (v2+)
-- **Linux or Mac with x86_64 CPU** (Intel/AMD, not ARM/Apple Silicon)
-- **sudo privileges** (for Docker commands)
-- **jdk-6u45-linux-x64.tar.gz** in project root (for licensing, not included)
+- **Mac with x86_64 CPU** (Intel/AMD, not ARM/Apple Silicon)
 
 ### Not Required
 
@@ -163,32 +167,32 @@ java-mogilefs/
 ### Run Full Integration Tests
 
 ```bash
-sudo bash scripts/run-full-test.sh
+bash scripts/run-full-test.sh
 ```
 
 ### Run Only Safe Tests (No Backend)
 
 ```bash
 cd infra
-sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
 ```
 
 ### Run Specific Test Class (with Infrastructure)
 
 ```bash
 cd infra
-sudo docker compose up -d
+docker compose up -d
 # Wait ~20 seconds for healthcheck, then:
-sudo docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
+docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
 ```
 
 ### Start Infrastructure and Keep Running
 
 ```bash
 cd infra
-sudo docker compose up -d mogilefs-infra
+docker compose up -d mogilefs-infra
 cd ..
-sudo bash scripts/init-mogilefs.sh
+bash scripts/init-mogilefs.sh
 # Now infrastructure is running for manual testing
 ```
 
@@ -196,7 +200,7 @@ sudo bash scripts/init-mogilefs.sh
 
 ```bash
 cd infra
-sudo docker compose down -v
+docker compose down -v
 ```
 
 ## Troubleshooting
@@ -206,11 +210,6 @@ sudo docker compose down -v
 **Problem:** You're on an ARM-based Mac (Apple Silicon M1/M2/M3).
 **Solution:** This project requires x86_64 (Intel/AMD). Use an Intel Mac, Linux machine, or cloud VM.
 
-### "jdk-6u45-linux-x64.tar.gz not found"
-
-**Problem:** Java tarball missing from project root.
-**Solution:** Download JDK 6u45 x86_64 Linux version and place in project root.
-
 ### Tests timeout or MogileFS won't start
 
 **Problem:** Docker resources insufficient or port conflicts.
@@ -218,10 +217,10 @@ sudo docker compose down -v
 
 ```bash
 # Clean everything
-cd infra && sudo docker compose down -v
-sudo docker system prune -a --volumes
+cd infra && docker compose down -v
+docker system prune -a --volumes
 # Try again
-sudo bash scripts/run-full-test.sh
+bash scripts/run-full-test.sh
 ```
 
 ### "Permission denied" when running scripts
@@ -232,13 +231,13 @@ sudo bash scripts/run-full-test.sh
 ```bash
 chmod +x scripts/run-full-test.sh
 chmod +x scripts/init-mogilefs.sh
-sudo bash scripts/run-full-test.sh
+bash scripts/run-full-test.sh
 ```
 
 ## Documentation
 
-- **[QUICK-START.md](QUICK-START.md)** - Quick reference with both automated and manual workflows
-- **[GRADLE-BRIDGE-CHEATSHEET.md](GRADLE-BRIDGE-CHEATSHEET.md)** - Phase 3 Gradle reference and commands
+- **[PHASE-3.3-COMPLETION.md](PHASE-3.3-COMPLETION.md)** - Phase 3.3 architecture and completion report
+- **[FUTURE-IMPROVEMENTS.md](FUTURE-IMPROVEMENTS.md)** - Planned improvements for Phase 3.4
 - **[infra/README.md](infra/README.md)** - Docker infrastructure configuration details
 - **[scripts/README.md](scripts/README.md)** - Script documentation and usage
 - **[README](README)** - Original MogileFS client library documentation

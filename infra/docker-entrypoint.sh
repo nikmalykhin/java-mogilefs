@@ -1,15 +1,12 @@
 #!/bin/bash
 set -e
 
-# Resolve mogilefs-infra service IP and add it to /etc/hosts
-MOGILEFS_IP=$(getent hosts mogilefs-infra | awk '{ print $1 }')
-if [ -z "$MOGILEFS_IP" ]; then
-    echo "ERROR: Could not resolve mogilefs-infra service IP"
-    exit 1
-fi
+# Note: With host networking, DNS and port forwarding are automatic!
+# All services are accessible via localhost directly.
 
-echo "Adding DNS entry: $MOGILEFS_IP qbert.guba.com"
-echo "$MOGILEFS_IP qbert.guba.com" >> /etc/hosts
+echo "Using Docker host networking - no special configuration needed"
 
 # Execute any passed command
+set +e  # Don't exit on errors from the passed command
 exec "$@"
+

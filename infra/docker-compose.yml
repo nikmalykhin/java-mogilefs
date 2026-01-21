@@ -1,18 +1,13 @@
 services:
   # Service 1: MogileFS Infrastructure (Tracker + Storage + MySQL)
+  # Uses host networking to eliminate 127.0.0.1 ambiguity - no socat needed!
   mogilefs-infra:
     image: hrchu/mogilefs-all-in-one:latest
     platform: linux/amd64
     container_name: mogilefs-infra
-    networks:
-      mogilefs-net:
-        aliases:
-          - qbert.guba.com
-    ports:
-      - "7001:7001" # Tracker port
-      - "7500:7500" # Storage device port
-      - "7501:7501" # Storage device port
-      - "3306:3306" # MySQL port (for inspection)
+    network_mode: "host"
+    # Note: ports section not needed with host networking
+    # All ports (7001, 7500, 7501, 3306) are automatically available on Mac
     environment:
       MOGILE_ADMIN_PASSWORD: admin
       MOGILE_TRACKER_PORT: 7001
@@ -32,8 +27,7 @@ services:
       context: ..
       dockerfile: infra/Dockerfile.gradle
     container_name: gradle-mogilefs-bridge
-    networks:
-      - mogilefs-net
+    network_mode: "host"
     depends_on:
       mogilefs-infra:
         condition: service_healthy
@@ -44,27 +38,6 @@ services:
     working_dir: /app
     entrypoint: /docker-entrypoint.sh
     command: tail -f /dev/null
-  # Service 3: Legacy Builder (Phase 2 - Java 6, DEPRECATED)
-  # NOTE: Ant has been decommissioned in Phase 3.3. This service is kept for historical reference only.
-  # Use 'gradle-bridge' service for all builds.
-  # builder:
-  #   build:
-  #     context: ..
-  #     dockerfile: infra/Dockerfile
-  #   container_name: java6-mogilefs-builder
-  #   networks:
-  #     - mogilefs-net
-  #   depends_on:
-  #     mogilefs-infra:
-  #       condition: service_healthy
-  #   volumes:
-  #     - ..:/app
-  #     - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
-  #   working_dir: /app
-  #   entrypoint: /docker-entrypoint.sh
-networks:
-  mogilefs-net:
-    driver: bridge
 
 volumes:
   mogilefs-data:

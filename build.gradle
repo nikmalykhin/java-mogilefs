@@ -75,3 +75,44 @@ tasks.register('runLegacyTest', JavaExec) { t ->
         args argLine.split('\\s+')
     }
 }
+
+// Phase 3.3b: Individual integration tests
+tasks.register('testBackend', JavaExec) {
+    group = 'verification'
+    description = 'Run TestBackend (tracker connectivity test)'
+    mainClass.set('com.guba.mogilefs.test.TestBackend')
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    dependsOn 'compileJava', 'compileTestJava'
+}
+
+tasks.register('testMogileFS', JavaExec) {
+    group = 'verification'
+    description = 'Run TestMogileFS (file storage/retrieval test)'
+    mainClass.set('com.guba.mogilefs.test.TestMogileFS')
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    dependsOn 'compileJava', 'compileTestJava'
+}
+
+// Phase 3.3b: Run all integration tests (TestBackend + TestMogileFS)
+// Usage: ./gradlew runIntegrationTests
+tasks.register('runIntegrationTests') {
+    group = 'verification'
+    description = 'Run all integration tests (TestBackend and TestMogileFS)'
+    dependsOn 'testBackend', 'testMogileFS'
+    
+    doFirst {
+        println "=========================================="
+        println "INTEGRATION TEST SUITE - Phase 3.3b"
+        println "=========================================="
+        println "\n[1/2] Running TestBackend..."
+        println "      Verifying tracker connection and ECHO command..."
+    }
+    
+    doLast {
+        println "\n[2/2] Running TestMogileFS..."
+        println "      Verifying file write and read operations..."
+        println "\n=========================================="
+        println "✅ ALL INTEGRATION TESTS PASSED!"
+        println "=========================================="
+    }
+}

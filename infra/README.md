@@ -1,94 +1,189 @@
 # Infrastructure Configuration
 
-This directory contains all Docker and containerization configuration for running legacy Java code in modern environments.
+This directory contains Docker configuration for running the Java MogileFS client with a local MogileFS server for testing.
+
+## Phase 3.3 Status: Host Networking
+
+**Current Architecture:** Docker host networking eliminates port forwarding complexity. All services run on `localhost` with direct port access.
 
 ## Files
 
-- **Dockerfile** - Builds the `java-mogilefs-builder` image with Java 6, Ant 1.9.7 (Phase 2, legacy)
-- **Dockerfile.gradle** - Builds the `gradle-bridge` image with Java 8, Gradle 8.5 (Phase 3.3, modern)
-- **docker-entrypoint.sh** - Container entrypoint script that:
-  - Resolves the mogilefs-infra service IP dynamically
-  - Adds qbert.guba.com mapping to /etc/hosts
-  - Executes the passed command
-- **docker-compose.yml** - Orchestrates three services:
-  - `mogilefs-infra` - MogileFS backend (Tracker + Storage + MySQL)
-  - `builder` - Legacy Java 6 + Ant compiler and test runner (Phase 2)
-  - `gradle-bridge` - Modern Java 8 + Gradle 8.5 build system (Phase 3.3)
+- **docker-compose.yml** - Orchestrates two active services:
+  - `mogilefs-infra` - MogileFS all-in-one (Tracker + Storage + MySQL) with host networking
+  - `gradle-bridge` - Java 8 + Gradle 8.5 build environment with host networking
+- **Dockerfile.gradle** - Builds the `gradle-bridge` image (Java 8, Gradle 8.5)
+- **docker-entrypoint.sh** - Simplified passthrough script (host networking requires no special config)
 
-## Usage
+## Quick Start
 
-### Prerequisites
+### Option 1: Automated Full Test (Recommended)
 
-- You must be in the `infra/` directory to run `docker compose` commands
-- The project root (`java-mogilefs/`) is needed for scripts and source files
-- Always use `sudo` for docker commands
+From project root:
 
-### Step-by-Step Workflow (Phase 3 - Gradle)
+```bash
+bash scripts/run-full-test.sh
+```
 
-**Step 1: Clean up any existing containers** (from `infra/` directory)
+This script:
+
+1. Starts MogileFS infrastructure
+2. Initializes domain/storage class
+3. Runs integration tests in Docker
+4. Cleans up containers
+
+### Option 2: Manual Workflow
+
+**Start Infrastructure:**
 
 ```bash
 cd infra
-sudo docker compose down -v
+docker compose up -d
 ```
 
-**Step 2: Start MogileFS infrastructure** (stay in `infra/`)
-
-```bash
-sudo docker compose up -d mogilefs-infra
-```
-
-**Step 3: Initialize domain** (go back to project root)
+**Initialize MogileFS domain:**
 
 ```bash
 cd ..
-sudo bash scripts/init-mogilefs.sh
+bash scripts/init-mogilefs.sh
 ```
 
-**Step 4: Start gradle-bridge** (return to `infra/`)
+**Run tests inside Docker:**
 
 ```bash
 cd infra
-sudo docker compose up -d gradle-bridge
+docker compose exec gradle-bridge ./gradlew runIntegrationTests
 ```
 
-**Step 5: Run tests** (from `infra/`)
+**Cleanup:**
 
 ```bash
-# Run specific test class
-sudo docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
-
-# Run URI test (no infrastructure needed)
-sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+docker compose down -v
 ```
 
-**Step 6: Cleanup** (from `infra/`)
+### Option 3: Run Tests from Host Machine
+
+**Prerequisites:** Docker containers running, `/etc/hosts` configured
+
+**Setup (one-time):**
 
 ```bash
-sudo docker compose down -v
+bash scripts/setup-integration-tests.sh
 ```
 
-### Legacy Ant Workflow (Phase 2)
-
-The original Ant-based builder is still available:
+**Run tests:**
 
 ```bash
-cd infra
-sudo docker compose run --rm builder bash -c "ant compile && java -cp classes:lib/* com.guba.mogilefs.test.URITest"
+./gradlew runIntegrationTests
 ```
+
+This runs tests **on your Mac**, connecting to MogileFS in Docker via `localhost`.
+
+## Architecture: Host Networking
+
+```
+┌─────────────────────────────────────┐
+│   macOS (localhost)                 │
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │  mogilefs-infra container   │   │
+│   │  network_mode: host         │   │
+│   │                             │   │
+│   │  :7001 (tracker)            │ ◄─┼─── Direct access from Mac
+│   │  :7500 (storage)            │ ◄─┼─── No port forwarding needed
+│   │  :7501 (storage)            │ ◄─┼─── No socat needed
+│   └─────────────────────────────┘   │
+│                                     │
+│   ┌─────────────────────────────┐   │
+│   │  gradle-bridge container    │   │
+│   │  network_mode: host         │   │
+│   │                             │   │
+│   │  Connects to localhost:7001 │ ◄─┼─── Same localhost as Mac
+│   └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+```
+
+**Key Benefit:** `127.0.0.1:7500` means the same thing everywhere - no ambiguity.
 
 ## Key Configuration Details
 
-- **Builder context:** Points to the project root (`..`) so it can access all source files
-- **Volumes:** Project root mounted as `/app` in both builder and gradle-bridge containers
-- **Volume mount for hardcoded path:** `/Users/ericlambrecht/...` mapped for legacy code compatibility
-- **Network:** Private `mogilefs-net` bridge network with `qbert.guba.com` alias on mogilefs-infra
-- **Entrypoint:** Dynamic DNS resolution to support hardcoded hostname
-- **Healthcheck:** mogilefs-infra validates tracker on port 7001
-- **Gradle-bridge command:** Runs `tail -f /dev/null` to keep container alive for `docker exec`
+- **Host Networking:** Both containers use `network_mode: "host"` for direct localhost access
+- **No Port Mapping:** Ports section removed; all ports automatically available on Mac
+- **No Network Bridge:** `mogilefs-net` removed; not needed with host networking
+- **Build Context:** Points to project root (`..`) to access source files
+- **Volumes:** Project root mounted as `/app` in gradle-bridge
+- **Hardcoded Path:** `/Users/ericlambrecht/...` mapped for legacy TestMogileFS compatibility
+- **Healthcheck:** Validates tracker on port 7001 before starting gradle-bridge
+- **Entrypoint:** Simplified; no DNS or port forwarding setup needed
+
+## Available Gradle Tasks
+
+From inside `gradle-bridge` container:
+
+```bash
+# Compile Java code
+./gradlew compileJava
+
+# Build JAR
+./gradlew jar
+
+# Run specific test
+./gradlew testBackend
+./gradlew testMogileFS
+
+# Run all integration tests
+./gradlew runIntegrationTests
+```
+
+## Troubleshooting
+
+### Containers won't start
+
+```bash
+cd infra
+docker compose down -v
+docker compose up -d
+```
+
+### Tests can't connect to tracker
+
+**Symptom:** `NoTrackersException` when running tests from Mac
+
+**Fix:** Add to `/etc/hosts`:
+
+```
+127.0.0.1 qbert.guba.com
+```
+
+Or run the setup script:
+
+```bash
+bash scripts/setup-integration-tests.sh
+```
+
+### Domain not found error
+
+**Symptom:** `ERR unreg_domain`
+
+**Fix:** Initialize MogileFS domain:
+
+```bash
+bash scripts/init-mogilefs.sh
+```
+
+### Port already in use
+
+**Symptom:** `bind: address already in use`
+
+**Fix:** Stop conflicting services or old containers:
+
+```bash
+lsof -i :7001
+docker compose down -v
+```
 
 ## See Also
 
-- [../GRADLE-BRIDGE-CHEATSHEET.md](../GRADLE-BRIDGE-CHEATSHEET.md) - Phase 3 Gradle reference
-- [../QUICK-START.md](../QUICK-START.md) - Quick start guide
-- [../scripts/init-mogilefs.sh](../scripts/init-mogilefs.sh) - Domain initialization script
+- [../PHASE-3.3-COMPLETION.md](../PHASE-3.3-COMPLETION.md) - Phase 3.3 completion report
+- [../TEST-HOST-NETWORKING.md](../TEST-HOST-NETWORKING.md) - Host networking implementation details
+- [../scripts/run-full-test.sh](../scripts/run-full-test.sh) - Automated test runner
+- [../build.gradle](../build.gradle) - Gradle build configuration

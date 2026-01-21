@@ -1,6 +1,6 @@
 FROM gradle:8.5.0-jdk8
 
-# Install additional tools if needed
+# Install netcat for healthcheck support
 RUN apt-get update && \
     apt-get install -y netcat-traditional && \
     rm -rf /var/lib/apt/lists/*
@@ -11,5 +11,4 @@ RUN chmod +x /docker-entrypoint.sh
 
 WORKDIR /app
 
-# The Gradle wrapper will be initialized from the build.gradle
 ENTRYPOINT ["/docker-entrypoint.sh"]
