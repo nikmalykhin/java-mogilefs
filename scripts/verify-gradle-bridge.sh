@@ -1,58 +1,65 @@
 #!/bin/bash
-# Gradle Bridge Verification Script
-# This script tests that the gradle-bridge service can compile the legacy code
+# Gradle Bridge Verification Script (Phase 3.1)
+# Tests that the gradle-bridge service can compile legacy Java 1.5 code
+# For full Phase 3.2 testing, use: ./scripts/run-full-test.sh
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cd .. && pwd)"
+INFRA_DIR="$PROJECT_ROOT/infra"
+cd "$PROJECT_ROOT"
 
 echo "=========================================="
-echo "Gradle 7.6 Bridge Verification"
+echo "Gradle 7.6 Bridge Verification (Phase 3.1)"
 echo "=========================================="
 echo
 
-# Check if docker-compose is available
-if ! command -v docker-compose &> /dev/null; then
-    echo "ERROR: docker-compose not found"
+# Check if docker compose is available
+if ! command -v docker &> /dev/null; then
+    echo "ERROR: docker not found"
     exit 1
 fi
 
 echo "1. Building the gradle-bridge Docker image..."
-docker-compose -f infra/docker-compose.yml build gradle-bridge
+cd "$INFRA_DIR"
+docker compose build gradle-bridge
 
 echo
 echo "2. Checking if mogilefs-infra is running..."
-if ! docker-compose -f infra/docker-compose.yml ps mogilefs-infra | grep -q "Up"; then
+if ! docker compose ps mogilefs-infra 2>/dev/null | grep -q "Up"; then
     echo "   Starting mogilefs-infra..."
-    docker-compose -f infra/docker-compose.yml up -d mogilefs-infra
+    docker compose up -d mogilefs-infra
     echo "   Waiting for mogilefs-infra to be healthy..."
     sleep 30
 fi
 
 echo
-echo "3. Verifying Java 8 in gradle-bridge..."
-docker-compose -f infra/docker-compose.yml run --rm gradle-bridge java -version
+echo "3. Starting gradle-bridge service..."
+docker compose up -d gradle-bridge
 
 echo
-echo "4. Compiling legacy Java 1.5 code via Gradle..."
-docker-compose -f infra/docker-compose.yml run --rm gradle-bridge ./gradlew compile
+echo "4. Verifying Java 8 in gradle-bridge..."
+docker compose exec gradle-bridge java -version
 
 echo
-echo "5. Verifying JAR was created..."
-JAR_FILE=$(docker-compose -f infra/docker-compose.yml run --rm gradle-bridge bash -c "ls -la mogilefs-*.jar" 2>/dev/null | tail -1)
-if [ -n "$JAR_FILE" ]; then
-    echo "   ✓ JAR created: $JAR_FILE"
+echo "5. Compiling legacy Java 1.5 code via Gradle..."
+docker compose exec gradle-bridge gradle compileJava
+
+echo
+echo "6. Verifying compiled classes exist..."
+if docker compose exec gradle-bridge test -d /app/build/classes/java/main; then
+    echo "   ✓ Classes compiled successfully"
 else
-    echo "   ⚠ JAR file not found (this may be expected)"
+    echo "   ✗ Compilation may have failed"
+    exit 1
 fi
 
 echo
 echo "=========================================="
-echo "✓ Gradle Bridge Verification Complete"
+echo "✓ Phase 3.1 Verification Complete"
 echo "=========================================="
 echo
 echo "Next steps:"
-echo "  1. Run: docker-compose -f infra/docker-compose.yml run --rm gradle-bridge ./gradlew tasks"
-echo "  2. Review available Gradle tasks"
-echo "  3. Test: docker-compose -f infra/docker-compose.yml run --rm gradle-bridge ./gradlew compile"
+echo "  1. List tasks: docker compose exec gradle-bridge gradle tasks"
+echo "  2. Run Phase 3.2 tests: cd $PROJECT_ROOT && bash scripts/run-full-test.sh"
+echo "  3. Manual test: docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest"

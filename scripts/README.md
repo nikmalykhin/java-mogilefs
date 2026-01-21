@@ -94,5 +94,5 @@ Verifying configuration...
 ## See Also
 
 - [../infra/](../infra/) - Docker configuration files
-- [../PHASE-2-COMPLETE.md](../PHASE-2-COMPLETE.md) - Phase 2 summary with architecture details
-- [../PHASE-2-SETUP.md](../PHASE-2-SETUP.md) - Complete Phase 2 documentation
+- [../GRADLE-BRIDGE-CHEATSHEET.md](../GRADLE-BRIDGE-CHEATSHEET.md) - Phase 3 Gradle reference
+- [../QUICK-START.md](../QUICK-START.md) - Quick start guide

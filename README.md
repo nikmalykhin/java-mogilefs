@@ -8,11 +8,12 @@ A Java client library for **MogileFS**, a distributed file storage system. This 
 
 This is a **complete Docker-based solution** that:
 
-- ✅ Compiles legacy Java 6 code (from 2008)
+- ✅ Compiles legacy Java 1.5 code (from 2008) using modern Gradle 7.6
 - ✅ Runs it against a live MogileFS backend
 - ✅ Works without modifying any source code
 - ✅ Handles hardcoded hostnames and file paths transparently
 - ✅ Uses Docker networking tricks to simulate the original developer's environment
+- ✅ Provides both Ant (legacy) and Gradle (modern) build systems
 
 ## Quick Start
 
@@ -43,8 +44,8 @@ To test URI parsing without needing a live MogileFS server:
 
 ```bash
 cd infra
-sudo docker compose build builder  # Build the Java 6 + Ant image
-sudo docker compose run --rm builder bash -c "ant compile && java -cp classes com.guba.mogilefs.test.URITest"
+sudo docker compose build gradle-bridge  # Build the Gradle 7.6 + Java 8 image
+sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
 ```
 
 **Expected output:**
@@ -97,13 +98,14 @@ Bind mounts the file at the exact path the code expects.
 
 ## Technology Stack
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Java | 1.6 (JDK u45) | Legacy runtime from 2005 era |
-| Apache Ant | 1.9.7 | Build tool for legacy projects |
-| MogileFS | Latest (Docker) | Distributed file storage backend |
-| Docker | v20+ | Container orchestration |
-| Ubuntu | 14.04 | Base OS for maximum compatibility |
+| Component  | Version                      | Purpose                                        |
+| ---------- | ---------------------------- | ---------------------------------------------- |
+| Java       | 1.5 (compiled) / 8 (runtime) | Cross-compilation: Java 5 source on Java 8 JVM |
+| Gradle     | 7.6                          | Modern build system (primary)                  |
+| Apache Ant | 1.9.7                        | Legacy build tool (available for reference)    |
+| MogileFS   | Latest (Docker)              | Distributed file storage backend               |
+| Docker     | v20+                         | Container orchestration                        |
+| Ubuntu     | Latest                       | Base OS for Gradle container                   |
 
 ## Project Structure
 
@@ -112,12 +114,14 @@ java-mogilefs/
 ├── README                          # Original MogileFS client docs
 ├── README.md                        # This file (entry point)
 ├── QUICK-START.md                  # Quick reference guide
-├── PHASE-2-COMPLETE.md             # Architecture summary
-├── PHASE-2-SETUP.md                # Deep technical documentation
-├── LEGACY-README.md                # Old Phase 1 documentation (archived)
+├── GRADLE-BRIDGE-CHEATSHEET.md     # Phase 3 Gradle reference
+├── build.gradle                    # Gradle build configuration
+├── build.xml                       # Legacy Ant build (preserved)
+├── gradlew                         # Gradle wrapper script
 │
 ├── infra/                          # Docker configuration
-│   ├── Dockerfile                  # Java 6 + Ant builder image
+│   ├── Dockerfile                  # Java 6 + Ant builder image (legacy)
+│   ├── Dockerfile.gradle           # Java 8 + Gradle 7.6 image (Phase 3)
 │   ├── docker-entrypoint.sh        # DNS resolution script
 │   ├── docker-compose.yml          # Service orchestration
 │   └── README.md                   # Infrastructure details
@@ -166,7 +170,16 @@ sudo bash scripts/run-full-test.sh
 
 ```bash
 cd infra
-sudo docker compose run --rm builder bash -c "ant compile && java -cp classes com.guba.mogilefs.test.URITest"
+sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+```
+
+### Run Specific Test Class (with Infrastructure)
+
+```bash
+cd infra
+sudo docker compose up -d
+# Wait ~20 seconds for healthcheck, then:
+sudo docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
 ```
 
 ### Start Infrastructure and Keep Running
@@ -225,11 +238,9 @@ sudo bash scripts/run-full-test.sh
 ## Documentation
 
 - **[QUICK-START.md](QUICK-START.md)** - Quick reference with both automated and manual workflows
-- **[PHASE-2-COMPLETE.md](PHASE-2-COMPLETE.md)** - Architecture summary and success indicators
-- **[PHASE-2-SETUP.md](PHASE-2-SETUP.md)** - Deep technical documentation and detailed troubleshooting
+- **[GRADLE-BRIDGE-CHEATSHEET.md](GRADLE-BRIDGE-CHEATSHEET.md)** - Phase 3 Gradle reference and commands
 - **[infra/README.md](infra/README.md)** - Docker infrastructure configuration details
 - **[scripts/README.md](scripts/README.md)** - Script documentation and usage
-- **[LEGACY-README.md](LEGACY-README.md)** - Historical Phase 1 documentation (archived)
 - **[README](README)** - Original MogileFS client library documentation
 
 ## How It Works Under The Hood

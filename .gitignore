@@ -1,6 +1,5 @@
 # Gradle build output
 /build/
-/build.gradle
 
 # Gradle wrapper - strategy:
 # - gradle/wrapper/gradle-wrapper.jar is committed (52KB, needed for wrapper)

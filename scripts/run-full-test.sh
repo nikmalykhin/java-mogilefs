@@ -9,7 +9,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INFRA_DIR="$PROJECT_ROOT/infra"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Phase 3.1+: Full Integration Test Suite (Gradle Bridge)"
+echo "Phase 3.2: Full Integration Test Suite (Gradle Bridge)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # Cleanup function - always runs on exit
@@ -39,21 +39,21 @@ trap cleanup EXIT
 
 # Step 1: Cleanup any previous state
 echo ""
-echo "[1/6] Cleaning up previous state..."
+echo "[1/7] Cleaning up previous state..."
 cd "$INFRA_DIR"
 docker compose down -v 2>/dev/null || true
 echo "✓ Cleanup complete"
 
 # Step 2: Build gradle-bridge image
 echo ""
-echo "[2/6] Building gradle-bridge Docker image..."
+echo "[2/7] Building gradle-bridge Docker image..."
 cd "$INFRA_DIR"
 docker compose build gradle-bridge
 echo "✓ Image built"
 
-# Step 3: Start infrastructure
+# Step 3: Start MogileFS infrastructure
 echo ""
-echo "[3/6] Starting MogileFS infrastructure..."
+echo "[3/7] Starting MogileFS infrastructure..."
 cd "$INFRA_DIR"
 docker compose up -d --no-build mogilefs-infra
 echo "✓ Infrastructure started"
@@ -78,19 +78,28 @@ fi
 
 # Step 4: Initialize MogileFS domain
 echo ""
-echo "[4/6] Initializing MogileFS domain..."
+echo "[4/7] Initializing MogileFS domain..."
 cd "$PROJECT_ROOT"
 bash scripts/init-mogilefs.sh
 echo "✓ Domain initialization complete"
 
-# Step 5: Compile with Gradle
+# Step 5: Start gradle-bridge service
 echo ""
-echo "[5/6] Compiling with Gradle 7.6..."
+echo "[5/7] Starting gradle-bridge service..."
 cd "$INFRA_DIR"
-docker compose run --rm gradle-bridge gradle compile
-echo "✓ Compilation complete"
+docker compose up -d --no-build gradle-bridge
+echo "✓ Gradle bridge started"
 
-# Step 6: Run integration tests (Phase 3.2 - not yet implemented)
+# Step 6: Run URI test (safe, no backend required)
 echo ""
-echo "[6/6] Integration tests not yet implemented (Phase 3.2)..."
-echo "✓ Phase 3.1 verification complete!"
+echo "[6/7] Running URITest..."
+cd "$INFRA_DIR"
+docker compose exec -T gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+echo "✓ URITest passed"
+
+# Step 7: Run TestMogileFS (requires infrastructure)
+echo ""
+echo "[7/7] Running TestMogileFS integration test..."
+cd "$INFRA_DIR"
+docker compose exec -T gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
+echo "✓ TestMogileFS passed"

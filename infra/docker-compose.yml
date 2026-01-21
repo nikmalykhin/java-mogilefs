@@ -26,7 +26,7 @@ services:
       retries: 12
       start_period: 15s
 
-  # Service 2: Gradle 7.6 Bridge (Modern build for legacy code)
+  # Service 2: Gradle 7.6 Bridge (Phase 3 - Modern build for legacy code)
   gradle-bridge:
     build:
       context: ..
@@ -43,7 +43,24 @@ services:
       - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
     working_dir: /app
     entrypoint: /docker-entrypoint.sh
-
+    command: tail -f /dev/null
+  # Service 3: Legacy Builder (Phase 2 - Java 6 + Ant, kept for reference)
+  # Uncomment to use the original Ant-based build system
+  # builder:
+  #   build:
+  #     context: ..
+  #     dockerfile: infra/Dockerfile
+  #   container_name: java6-mogilefs-builder
+  #   networks:
+  #     - mogilefs-net
+  #   depends_on:
+  #     mogilefs-infra:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ..:/app
+  #     - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
+  #   working_dir: /app
+  #   entrypoint: /docker-entrypoint.sh
 networks:
   mogilefs-net:
     driver: bridge

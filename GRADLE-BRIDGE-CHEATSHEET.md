@@ -7,37 +7,37 @@
 ```bash
 docker-compose -f infra/docker-compose.yml build gradle-bridge && \
 docker-compose -f infra/docker-compose.yml up -d mogilefs-infra && \
-docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle compile
+docker-compose -f infra/docker-compose.yml up -d gradle-bridge
 ```
 
 ## Common Commands
 
-| Goal | Command |
-|------|---------|
-| Build image | `docker-compose -f infra/docker-compose.yml build gradle-bridge` |
-| Start services | `docker-compose -f infra/docker-compose.yml up -d mogilefs-infra` |
-| Compile | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle compile` |
-| Clean | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle clean` |
-| Docs | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle doc` |
-| List tasks | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle tasks` |
-| Check Java | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge java -version` |
-| Check Gradle | `docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle --version` |
-| Stop services | `docker-compose -f infra/docker-compose.yml down` |
+| Goal           | Command                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Build image    | `docker-compose -f infra/docker-compose.yml build gradle-bridge`                                                                     |
+| Start services | `docker-compose -f infra/docker-compose.yml up -d`                                                                                   |
+| Compile        | `docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle compileJava`                                                   |
+| Clean          | `docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle clean`                                                         |
+| Run test       | `docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS` |
+| List tasks     | `docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle tasks`                                                         |
+| Check Java     | `docker-compose -f infra/docker-compose.yml exec gradle-bridge java -version`                                                        |
+| Check Gradle   | `docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle --version`                                                     |
+| Stop services  | `docker-compose -f infra/docker-compose.yml down`                                                                                    |
 
 ## Local Alias (Optional)
 
 Add to your `~/.bashrc` or `~/.zshrc`:
 
 ```bash
-alias gradle-docker='docker-compose -f infra/docker-compose.yml run --rm gradle-bridge gradle'
+alias gradle-docker='docker-compose -f infra/docker-compose.yml exec gradle-bridge gradle'
 ```
 
 Then use:
 
 ```bash
-gradle-docker compile
+gradle-docker compileJava
 gradle-docker clean
-gradle-docker testMogileFS
+gradle-docker runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
 ```
 
 ## Directory Structure
@@ -56,24 +56,39 @@ root/
 └── java/                     ← Source code
 ```
 
-## The Magic Line
+## The Key Feature: runLegacyTest
 
 ```gradle
-ant.importBuild('build.xml')
+tasks.register('runLegacyTest', JavaExec) {
+    mainClass.set(project.findProperty('mainClass'))
+    classpath = files(
+        "$buildDir/classes/java/main",
+        "$buildDir/resources/main",
+        fileTree(dir: 'lib', include: ['**/*.jar'])
+    )
+    dependsOn 'compileJava'
+}
 ```
 
-This makes all Ant targets available as Gradle tasks. Period.
+This allows running any legacy main class with `-PmainClass=...` without modifying build config.
 
 ## Available Gradle Tasks
 
-```
-- gradle clean              # Remove build artifacts
-- gradle compile            # Compile Java code
-- gradle compileAnt         # Alias for compile
-- gradle doc                # Generate Javadoc
-- gradle testMogileFS       # Run integration tests
-- gradle tasks              # List all tasks
-- gradle --version          # Show Gradle version
+```bash
+# Core tasks
+gradle clean                # Remove build artifacts
+gradle compileJava          # Compile Java code
+gradle jar                  # Create JAR file
+gradle tasks                # List all tasks
+gradle --version            # Show Gradle version
+
+# Phase 3.2: Test runner
+gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
+gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+
+# Legacy Ant tasks (if needed, run via Ant directly)
+ant compile                 # Compile with Ant
+ant doc                     # Generate Javadoc with Ant
 ```
 
 ## Docker Services
@@ -130,14 +145,14 @@ rm gradle-7.6.1-bin.zip
 
 ## Troubleshooting
 
-| Problem | Solution |
-|---------|----------|
-| "Cannot connect to Docker" | Start Docker Desktop (Mac/Windows) or Docker daemon (Linux) |
-| "mogilefs-infra not healthy" | Wait 30 seconds: `sleep 30 && docker-compose ps` |
-| "Permission denied: ./gradlew" | Run: `chmod +x gradlew` |
-| "Cannot find TestMogileFS" | Expected in Phase 3.1; Phase 3.2 will add it |
-| "Slow first build" | See "Pre-Cache Gradle Locally" above to speed up first run |
-| "Connection refused" | Ensure mogilefs-infra is running: `docker-compose ps` |
+| Problem                                          | Solution                                                    |
+| ------------------------------------------------ | ----------------------------------------------------------- |
+| "Cannot connect to Docker"                       | Start Docker Desktop (Mac/Windows) or Docker daemon (Linux) |
+| "mogilefs-infra not healthy"                     | Wait 30 seconds: `sleep 30 && docker-compose ps`            |
+| "service gradle-bridge is not running"           | Start it: `docker-compose up -d gradle-bridge`              |
+| "Could not find or load main class" with gradlew | Use system gradle: `gradle` instead of `./gradlew`          |
+| "Missing -PmainClass"                            | Provide class: `gradle runLegacyTest -PmainClass=...`       |
+| "Connection refused"                             | Ensure mogilefs-infra is running: `docker-compose ps`       |
 
 ## Documentation
 
@@ -153,28 +168,31 @@ rm gradle-7.6.1-bin.zip
 
 ## Environment Inside Container
 
-| Variable | Value |
-|----------|-------|
-| JAVA_HOME | `/opt/java` (Java 8) |
-| GRADLE_HOME | `/opt/gradle` |
-| CLASSPATH | Auto-resolved from `./lib/**/*.jar` |
-| Working Dir | `/app` |
-| Source Dir | `/app/java` → Mounted to host root |
+| Variable    | Value                               |
+| ----------- | ----------------------------------- |
+| JAVA_HOME   | `/opt/java` (Java 8)                |
+| GRADLE_HOME | `/opt/gradle`                       |
+| CLASSPATH   | Auto-resolved from `./lib/**/*.jar` |
+| Working Dir | `/app`                              |
+| Source Dir  | `/app/java` → Mounted to host root  |
 
-## Phase 3.1 Checklist
+## Phase 3 Checklist
 
 - [x] Gradle 7.6 Dockerfile created
-- [x] build.gradle with Ant integration created
+- [x] build.gradle with native compilation created
 - [x] Gradle wrapper installed (gradlew + properties)
 - [x] docker-compose.yml updated with gradle-bridge service
 - [x] Networking configured (qbert.guba.com alias)
-- [x] Volume mounts for source code
+- [x] Volume mounts for source code and hardcoded paths
 - [x] Documentation written
-- [ ] Verification script run (next step)
+- [x] **Phase 3.2:** `runLegacyTest` task created and tested
+- [x] **Phase 3.2:** TestMogileFS executed successfully
 
-## Next Phase (3.2)
+## Current Status
 
-- Add JUnit 3.8.x to classpath
-- Create test runner task
-- Execute TestMogileFS
-- Document results
+**Phase 3.2 Complete!** The Gradle bridge can now:
+
+- Compile Java 1.5 source code using Java 8
+- Execute any legacy main class via `runLegacyTest -PmainClass=...`
+- Connect to the MogileFS infrastructure via Docker networking
+- Access hardcoded file paths via volume mounts

@@ -1,0 +1,79 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.guba'
+version = '1.1'
+
+// Note: We intentionally do NOT import the Ant build here.
+// Instead, we use Gradle's native compileJava task which is more reliable
+// for this Java 5 codebase when running on Java 8.
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_5
+    targetCompatibility = JavaVersion.VERSION_1_5
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['java']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['java/com/guba/mogilefs/test']
+        }
+    }
+}
+
+dependencies {
+    // Add dependencies from lib directory
+    implementation fileTree(dir: 'lib', include: '**/*.jar')
+}
+
+// Alias 'compile' to 'compileJava' for backwards compatibility with Ant scripts
+tasks.register('compile') {
+    dependsOn 'compileJava'
+}
+
+jar {
+    archiveFileName = "mogilefs-${version}.jar"
+    from sourceSets.main.output
+}
+
+// Phase 3.2: Add a generic JavaExec runner for legacy main classes
+// Usage: ./gradlew runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
+tasks.register('runLegacyTest', JavaExec) { t ->
+    // Require -PmainClass to specify which class to execute
+    def mc = project.findProperty('mainClass')
+    if (!mc) {
+        throw new GradleException("Missing -PmainClass. Example: -PmainClass=com.guba.mogilefs.test.TestMogileFS")
+    }
+
+    // Gradle 7.6 syntax for main class
+    mainClass.set(mc.toString())
+
+    // Classpath includes:
+    // 1) Ant/Gradle-compiled classes under build/classes/java/main
+    // 2) Gradle resources (if any)
+    // 3) Legacy jars from lib/
+    classpath = files(
+        "$buildDir/classes/java/main",
+        "$buildDir/resources/main",
+        fileTree(dir: 'lib', include: ['**/*.jar'])
+    )
+
+    // Ensure classes exist by compiling as needed
+    dependsOn 'compileJava'
+
+    // Allow passing program args via -Pargs="..." (optional convenience)
+    def argLine = (project.findProperty('args') ?: '').toString().trim()
+    if (argLine) {
+        args argLine.split('\\s+')
+    }
+}
