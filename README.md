@@ -8,7 +8,7 @@ A Java client library for **MogileFS**, a distributed file storage system. This 
 
 This is a **complete Docker-based solution** that:
 
-- ✅ Compiles legacy Java 1.5 code (from 2008) using modern Gradle 7.6
+- ✅ Compiles legacy Java 1.5 code (from 2008) using modern Gradle 8.5
 - ✅ Runs it against a live MogileFS backend
 - ✅ Works without modifying any source code
 - ✅ Handles hardcoded hostnames and file paths transparently
@@ -44,7 +44,7 @@ To test URI parsing without needing a live MogileFS server:
 
 ```bash
 cd infra
-sudo docker compose build gradle-bridge  # Build the Gradle 7.6 + Java 8 image
+sudo docker compose build gradle-bridge  # Build the Gradle 8.5 + Java 8 image
 sudo docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
 ```
 
@@ -101,7 +101,7 @@ Bind mounts the file at the exact path the code expects.
 | Component  | Version                      | Purpose                                        |
 | ---------- | ---------------------------- | ---------------------------------------------- |
 | Java       | 1.5 (compiled) / 8 (runtime) | Cross-compilation: Java 5 source on Java 8 JVM |
-| Gradle     | 7.6                          | Modern build system (primary)                  |
+| Gradle     | 8.5                          | Modern build system (primary)                  |
 | Apache Ant | 1.9.7                        | Legacy build tool (available for reference)    |
 | MogileFS   | Latest (Docker)              | Distributed file storage backend               |
 | Docker     | v20+                         | Container orchestration                        |
@@ -121,7 +121,7 @@ java-mogilefs/
 │
 ├── infra/                          # Docker configuration
 │   ├── Dockerfile                  # Java 6 + Ant builder image (legacy)
-│   ├── Dockerfile.gradle           # Java 8 + Gradle 7.6 image (Phase 3)
+│   ├── Dockerfile.gradle           # Java 8 + Gradle 8.5 image (Phase 3.3)
 │   ├── docker-entrypoint.sh        # DNS resolution script
 │   ├── docker-compose.yml          # Service orchestration
 │   └── README.md                   # Infrastructure details

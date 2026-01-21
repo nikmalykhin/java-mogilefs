@@ -26,7 +26,7 @@ services:
       retries: 12
       start_period: 15s
 
-  # Service 2: Gradle 7.6 Bridge (Phase 3 - Modern build for legacy code)
+  # Service 2: Gradle 8.5 Bridge (Phase 3.3 - Modern build, Java 8)
   gradle-bridge:
     build:
       context: ..
@@ -44,8 +44,9 @@ services:
     working_dir: /app
     entrypoint: /docker-entrypoint.sh
     command: tail -f /dev/null
-  # Service 3: Legacy Builder (Phase 2 - Java 6 + Ant, kept for reference)
-  # Uncomment to use the original Ant-based build system
+  # Service 3: Legacy Builder (Phase 2 - Java 6, DEPRECATED)
+  # NOTE: Ant has been decommissioned in Phase 3.3. This service is kept for historical reference only.
+  # Use 'gradle-bridge' service for all builds.
   # builder:
   #   build:
   #     context: ..

@@ -5,13 +5,13 @@ plugins {
 group = 'com.guba'
 version = '1.1'
 
-// Note: We intentionally do NOT import the Ant build here.
-// Instead, we use Gradle's native compileJava task which is more reliable
-// for this Java 5 codebase when running on Java 8.
+// Phase 3.3: THE SEVERING
+// Ant has been fully decommissioned. Gradle now owns the build lifecycle.
+// We have upgraded to Java 8 and migrated to Maven Central dependencies.
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_1_5
-    targetCompatibility = JavaVersion.VERSION_1_5
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
 }
 
 repositories {
@@ -22,6 +22,8 @@ sourceSets {
     main {
         java {
             srcDirs = ['java']
+            // Exclude test classes from main source set
+            exclude 'com/guba/mogilefs/test/**'
         }
     }
     test {
@@ -32,8 +34,9 @@ sourceSets {
 }
 
 dependencies {
-    // Add dependencies from lib directory
-    implementation fileTree(dir: 'lib', include: '**/*.jar')
+    // Native Gradle dependencies from Maven Central (replacing lib/ jars)
+    implementation 'commons-pool:commons-pool:1.6'
+    implementation 'log4j:log4j:1.2.17'
 }
 
 // Alias 'compile' to 'compileJava' for backwards compatibility with Ant scripts
@@ -59,17 +62,12 @@ tasks.register('runLegacyTest', JavaExec) { t ->
     mainClass.set(mc.toString())
 
     // Classpath includes:
-    // 1) Ant/Gradle-compiled classes under build/classes/java/main
-    // 2) Gradle resources (if any)
-    // 3) Legacy jars from lib/
-    classpath = files(
-        "$buildDir/classes/java/main",
-        "$buildDir/resources/main",
-        fileTree(dir: 'lib', include: ['**/*.jar'])
-    )
+    // 1) Gradle-compiled classes from main and test sourceSets
+    // 2) Runtime dependencies (commons-pool, log4j from Maven Central)
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
 
     // Ensure classes exist by compiling as needed
-    dependsOn 'compileJava'
+    dependsOn 'compileJava', 'compileTestJava'
 
     // Allow passing program args via -Pargs="..." (optional convenience)
     def argLine = (project.findProperty('args') ?: '').toString().trim()

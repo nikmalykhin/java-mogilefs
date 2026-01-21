@@ -1,5 +1,8 @@
 FROM ubuntu:14.04
 
+# LEGACY: This Dockerfile is kept for historical reference (Phase 2)
+# Phase 3.3 uses Dockerfile.gradle with Gradle 8.5 + Java 8
+
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install dependencies
@@ -16,16 +19,8 @@ RUN tar -xzf /tmp/jdk-6u45-linux-x64.tar.gz -C /opt/ && \
 ENV JAVA_HOME=/opt/java
 ENV PATH=$PATH:$JAVA_HOME/bin
 
-# Install Ant
-ENV ANT_VERSION=1.9.7
-ENV ANT_HOME=/opt/ant
-ENV PATH=$PATH:$ANT_HOME/bin
-
-RUN cd /tmp && \
-    wget https://archive.apache.org/dist/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz && \
-    tar zxf apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt/ && \
-    ln -s /opt/apache-ant-${ANT_VERSION} ${ANT_HOME} && \
-    rm -f *.gz
+# NOTE: Ant has been decommissioned in Phase 3.3
+# This image is retained for historical reference only
 
 # Copy entrypoint script (from infra directory in project root context)
 COPY infra/docker-entrypoint.sh /

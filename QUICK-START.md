@@ -6,7 +6,7 @@ All infrastructure code is now organized:
 
 - **`infra/`** - Docker configuration
   - `Dockerfile` - Java 6 + Ant builder image (Phase 2, legacy)
-  - `Dockerfile.gradle` - Java 8 + Gradle 7.6 (Phase 3, modern)
+  - `Dockerfile.gradle` - Java 8 + Gradle 8.5 (Phase 3.3, modern)
   - `docker-entrypoint.sh` - DNS resolution script
   - `docker-compose.yml` - Service orchestration
 - **`scripts/`** - Helper scripts

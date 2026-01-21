@@ -1,6 +1,6 @@
 # Gradle Bridge - Reference Card
 
-**TL;DR:** Run legacy Java 1.5 code through modern Gradle 7.6 in Docker on ARM.
+**TL;DR:** Run legacy Java 1.5 code through modern Gradle 8.5 in Docker on ARM.
 
 ## One-Liner Setup
 
@@ -44,15 +44,15 @@ gradle-docker runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
 
 ```
 root/
-├── build.gradle              ← Gradle (wraps Ant)
-├── build.xml                 ← Ant (unchanged)
+├── build.gradle              ← Gradle (authoritative build system)
+├── build.xml                 ← DEPRECATED (kept for reference)
 ├── gradlew                   ← Gradle wrapper script
 ├── gradle/wrapper/
 │   └── gradle-wrapper.properties
 ├── infra/
-│   ├── Dockerfile            ← Old: Java 6 + Ant
-│   ├── Dockerfile.gradle     ← New: Java 8 + Gradle 7.6
-│   └── docker-compose.yml    ← Both services defined
+│   ├── Dockerfile            ← Legacy: Java 6 + Ant (deprecated)
+│   ├── Dockerfile.gradle     ← Phase 3.3: Java 8 + Gradle 8.5
+│   └── docker-compose.yml    ← gradle-bridge service (active)
 └── java/                     ← Source code
 ```
 
@@ -61,18 +61,14 @@ root/
 ```gradle
 tasks.register('runLegacyTest', JavaExec) {
     mainClass.set(project.findProperty('mainClass'))
-    classpath = files(
-        "$buildDir/classes/java/main",
-        "$buildDir/resources/main",
-        fileTree(dir: 'lib', include: ['**/*.jar'])
-    )
-    dependsOn 'compileJava'
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    dependsOn 'compileJava', 'compileTestJava'
 }
 ```
 
-This allows running any legacy main class with `-PmainClass=...` without modifying build config.
+This allows running any legacy main class with `-PmainClass=...` using Gradle-compiled classes and Maven Central dependencies.
 
-## Available Gradle Tasks
+# Phase 3.3: Gradle Tasks (Ant is DEPRECATED)
 
 ```bash
 # Core tasks
@@ -85,10 +81,6 @@ gradle --version            # Show Gradle version
 # Phase 3.2: Test runner
 gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
 gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
-
-# Legacy Ant tasks (if needed, run via Ant directly)
-ant compile                 # Compile with Ant
-ant doc                     # Generate Javadoc with Ant
 ```
 
 ## Docker Services
@@ -102,7 +94,7 @@ mogilefs-net (Docker network)
 └── gradle-bridge (NEW)
     └── Can resolve qbert.guba.com
     └── Has source code mounted
-    └── Java 8 + Gradle 7.6
+    └── Java 8 + Gradle 8.5
 ```
 
 ## Build Performance & Pre-Caching
@@ -178,7 +170,7 @@ rm gradle-7.6.1-bin.zip
 
 ## Phase 3 Checklist
 
-- [x] Gradle 7.6 Dockerfile created
+- [x] Gradle 8.5 Dockerfile created
 - [x] build.gradle with native compilation created
 - [x] Gradle wrapper installed (gradlew + properties)
 - [x] docker-compose.yml updated with gradle-bridge service

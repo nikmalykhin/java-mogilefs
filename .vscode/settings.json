@@ -18,5 +18,6 @@
     {
       "file": ".github/copilot.instructions.md"
     }
-  ]
+  ],
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

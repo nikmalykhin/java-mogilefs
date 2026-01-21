@@ -5,7 +5,7 @@ This directory contains all Docker and containerization configuration for runnin
 ## Files
 
 - **Dockerfile** - Builds the `java-mogilefs-builder` image with Java 6, Ant 1.9.7 (Phase 2, legacy)
-- **Dockerfile.gradle** - Builds the `gradle-bridge` image with Java 8, Gradle 7.6 (Phase 3, modern)
+- **Dockerfile.gradle** - Builds the `gradle-bridge` image with Java 8, Gradle 8.5 (Phase 3.3, modern)
 - **docker-entrypoint.sh** - Container entrypoint script that:
   - Resolves the mogilefs-infra service IP dynamically
   - Adds qbert.guba.com mapping to /etc/hosts
@@ -13,7 +13,7 @@ This directory contains all Docker and containerization configuration for runnin
 - **docker-compose.yml** - Orchestrates three services:
   - `mogilefs-infra` - MogileFS backend (Tracker + Storage + MySQL)
   - `builder` - Legacy Java 6 + Ant compiler and test runner (Phase 2)
-  - `gradle-bridge` - Modern Java 8 + Gradle 7.6 build system (Phase 3)
+  - `gradle-bridge` - Modern Java 8 + Gradle 8.5 build system (Phase 3.3)
 
 ## Usage
 
