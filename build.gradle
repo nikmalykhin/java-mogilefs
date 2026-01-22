@@ -25,21 +25,6 @@ repositories {
     mavenCentral()
 }
 
-sourceSets {
-    main {
-        java {
-            srcDirs = ['java']
-            // Exclude test classes from main source set
-            exclude 'com/guba/mogilefs/test/**'
-        }
-    }
-    test {
-        java {
-            srcDirs = ['java/com/guba/mogilefs/test']
-        }
-    }
-}
-
 dependencies {
     // Native Gradle dependencies from Maven Central (replacing lib/ jars)
     implementation 'commons-pool:commons-pool:1.6'
@@ -71,7 +56,7 @@ tasks.register('runLegacyTest', JavaExec) { t ->
     // Classpath includes:
     // 1) Gradle-compiled classes from main and test sourceSets
     // 2) Runtime dependencies (commons-pool, log4j from Maven Central)
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
 
     // Ensure classes exist by compiling as needed
     dependsOn 'compileJava', 'compileTestJava'
@@ -88,7 +73,7 @@ tasks.register('testBackend', JavaExec) {
     group = 'verification'
     description = 'Run TestBackend (tracker connectivity test)'
     mainClass.set('com.guba.mogilefs.test.TestBackend')
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
     dependsOn 'compileJava', 'compileTestJava'
 }
 
@@ -96,7 +81,7 @@ tasks.register('testMogileFS', JavaExec) {
     group = 'verification'
     description = 'Run TestMogileFS (file storage/retrieval test)'
     mainClass.set('com.guba.mogilefs.test.TestMogileFS')
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.output
+    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
     dependsOn 'compileJava', 'compileTestJava'
 }
 
