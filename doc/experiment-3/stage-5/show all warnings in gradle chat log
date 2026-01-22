@@ -1,0 +1,62 @@
+User: I want to follow a "Compiler-Driven" Refactoring strategy.
+Currently, Gradle is suppressing the detailed warnings about "unchecked operations."
+
+**Task:**
+Act as a **Build Engineer**.
+Update `build.gradle` to enable verbose compiler warnings.
+Add the following compiler args to the JavaCompile tasks:
+`-Xlint:unchecked`, `-Xlint:deprecation`
+
+**Goal:**
+I want the next build to show me EVERY raw type and unsafe cast so I can fix them one by one.
+
+GitHub Copilot: I'll update the build.gradle file to enable verbose compiler warnings for unchecked operations and deprecations. 
+
+Read [](file:///Users/nikmalykhin/Projects/my-book/java-mogilefs/build.gradle#1-1), lines 1 to 100
+
+Read [](file:///Users/nikmalykhin/Projects/my-book/java-mogilefs/build.gradle#101-101), lines 101 to 118
+
+Now I'll add the compiler arguments to enable verbose warnings. I'll add a `tasks.withType(JavaCompile)` configuration block to the build.gradle file: 
+
+Using "Replace String in File"
+
+
+```
+
+```
+Perfect! I've updated build.gradle to enable verbose compiler warnings. The configuration now includes:
+
+- `-Xlint:unchecked` - Shows all raw type warnings and unsafe cast operations
+- `-Xlint:deprecation` - Shows all deprecated API usage
+
+Run `./gradlew clean build` to see every warning that needs fixing. The compiler will now explicitly report each location where:
+- Raw types are used (e.g., `Map` instead of `Map<String, String>`)
+- Unchecked casts occur
+- Deprecated APIs are called
+
+This gives you a complete inventory of technical debt to address systematically.
+
+Made changes.
+
+User: and for :compileTestJava too update settings
+
+GitHub Copilot: The configuration I added already applies to both `compileJava` and `compileTestJava` since `tasks.withType(JavaCompile)` targets all Java compilation tasks. However, I'll update the comment to make this explicit: 
+
+Using "Replace String in File"
+
+
+```
+
+```
+Updated. The `tasks.withType(JavaCompile)` configuration automatically applies to both `:compileJava` (main code) and `:compileTestJava` (test code), so both will now show verbose warnings.
+
+Made changes.
+
+User: prepare commit
+
+GitHub Copilot: Ran terminal command:  git add build.gradle && git commit -m "Phase 3.4: Enable verbose compiler warnings
+
+Add -Xlint:unchecked and -Xlint:deprecation flags to all JavaCompile tasks.
+This exposes raw types, unsafe casts, and deprecated API usage for systematic refactoring."
+
+Committed. The changes are now saved with commit hash `5e610e9`. The build is now configured to show all unchecked operations and deprecation warnings.
