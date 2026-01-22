@@ -24,29 +24,38 @@ import com.guba.mogilefs.TrackerCommunicationException;
 public class TestBackend {
     private static Logger log = Logger.getLogger(TestBackend.class);
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
 
-        try {
-            List trackers = new ArrayList();
-            trackers.add(new InetSocketAddress("qbert.guba.com", 7001));
-            Backend backend = new Backend(trackers, true);
-            log.debug("constructed and connected to qbert ok");
-        } catch (NoTrackersException e) {
-            log.error("no trackers exception", e);
-        }
+        // Test 1: Constructor and connection
+        List trackers = new ArrayList();
+        trackers.add(new InetSocketAddress("qbert.guba.com", 7001));
+        Backend backend = new Backend(trackers, true);
+        log.debug("constructed and connected to qbert ok");
 
-        try {
-            List trackers = new ArrayList();
-            trackers.add(new InetSocketAddress("qbert.guba.com", 7001));
-            Backend backend = new Backend(trackers, true);
-            Map response = backend.doRequest("ECHO", new String[] { "eric", "r00lez" });
-            log.debug("constructed qbert connection ok, sent command, and received error response: "
-                    + backend.getLastErrStr());
-        } catch (NoTrackersException e) {
-            log.error("no trackers exception", e);
-        } catch (TrackerCommunicationException e) {
-            log.error("tracker comm exception", e);
+        // Test 2: ECHO command - verify Backend correctly handles error responses
+        // Note: ECHO is NOT a valid MogileFS command - we expect an error response
+        List trackers2 = new ArrayList();
+        trackers2.add(new InetSocketAddress("qbert.guba.com", 7001));
+        Backend backend2 = new Backend(trackers2, true);
+        Map response = backend2.doRequest("ECHO", new String[] { "eric", "r00lez" });
+
+        // Backend.doRequest() returns null when tracker sends error response
+        // This is expected behavior for invalid commands
+        if (response == null) {
+            // Verify that lastErr and lastErrStr were populated by Backend
+            String lastErr = backend2.getLastErr();
+            String lastErrStr = backend2.getLastErrStr();
+
+            if (lastErr == null || lastErr.isEmpty()) {
+                throw new RuntimeException("Backend returned null but did not set lastErr");
+            }
+
+            log.debug("ECHO correctly returned error: " + lastErr + " - " + lastErrStr);
+            log.debug("Backend error handling verified successfully");
+        } else {
+            // If response is not null, ECHO somehow succeeded (unexpected!)
+            throw new RuntimeException("ECHO command unexpectedly succeeded - tracker may have changed");
         }
     }
 }

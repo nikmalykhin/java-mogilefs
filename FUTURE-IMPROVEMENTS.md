@@ -162,8 +162,9 @@ if (paths == null) {
 
 ### Phase 3.4 Prerequisites (Before Refactoring)
 
-1. **Make tests fail on errors** - Most critical for safety net
-2. **Add domain initialization check** - Prevent silent test skipping
+1. ✅ **Make tests fail on errors** - COMPLETED in Phase 3.3c
+2. **Replace ECHO test with noop** - TestBackend currently uses invalid ECHO command; should use `noop` (standard MogileFS connectivity test)
+3. **Add domain initialization check** - Prevent silent test skipping
 
 ### Phase 3.5 (After God Class Refactoring)
 

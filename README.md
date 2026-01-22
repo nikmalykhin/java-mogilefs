@@ -1,202 +1,75 @@
-# Java MogileFS Client - Legacy Edition (2008)
+# Java MogileFS Client
 
-A Java client library for **MogileFS**, a distributed file storage system. This project resurrects 2008-era code and runs it in modern Docker environments without any source code modifications.
-
-**Original library description:** See [README](README) (the original MogileFS client documentation)
-
-## What This Project Does
-
-This is a **complete Docker-based solution** that:
-
-- ✅ Compiles legacy Java 1.5 code (from 2008) using modern Gradle 8.5
-- ✅ Runs it against a live MogileFS backend
-- ✅ Works without modifying any source code
-- ✅ Handles hardcoded hostnames and file paths transparently
-- ✅ Uses Docker host networking to simulate the original developer's environment
-- ✅ Automatic infrastructure setup and cleanup
+A Java client library for **MogileFS**, a distributed file storage system.
 
 ## Quick Start
 
-### Option 1: Run Everything Automated (Recommended)
-
-One command runs the full integration test suite with automatic cleanup:
+**Run all tests:**
 
 ```bash
-bash scripts/run-full-test.sh
+./scripts/run-full-test.sh
 ```
 
-This will:
-
-1. Start MogileFS infrastructure
-2. Initialize the domain
-3. Run all tests
-4. Clean up on success or failure
-
-**Expected output:**
-
-```
-✅ All tests passed! Cleaning up infrastructure...
-```
-
-### Option 2: Just Run the Safe Unit Test (No Infrastructure Needed)
-
-To test URI parsing without needing a live MogileFS server:
+**Run tests directly:**
 
 ```bash
-cd infra
-docker compose build gradle-bridge  # Build the Gradle 8.5 + Java 8 image
-docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+./gradlew runIntegrationTests
 ```
 
-**Expected output:**
+## What You Need
 
-```
-parsed //somehost.somewhere.com:800
-authority is somehost.somewhere.com:800
-host is somehost.somewhere.com
-port is 800
-```
+- Docker
+- macOS (Intel or Apple Silicon with Rosetta)
 
-### Option 3: Manual Step-by-Step Workflow
+## What This Does
 
-See [scripts/README.md](scripts/README.md) for detailed workflow instructions.
+Runs 2008-era Java code against a modern MogileFS backend in Docker:
 
-## Architecture Overview
-
-### The Problem We Solved
-
-The original code is hardcoded for a specific PC:
-
-- Connects to `qbert.guba.com:7001` (doesn't exist globally)
-- Looks for files at `/Users/ericlambrecht/Projects/guba/MogileFS/...` (developer's machine)
-
-### The Solution (No Code Changes)
-
-We use **Docker networking and filesystem virtualization**:
-
-**Layer 1 - DNS Resolution**
-
-```bash
-# In /etc/hosts (Mac):
-127.0.0.1 qbert.guba.com
-```
-
-With host networking, both container and Mac share localhost, so the hardcoded hostname resolves correctly.
-
-**Layer 2 - File Path Mapping**
-
-```yaml
-# In docker-compose.yml (gradle-bridge container):
-volumes:
-  - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
-```
-
-Bind mounts the file at the exact path the code expects.
-
-**Layer 3 - Host Networking**
-
-```yaml
-mogilefs-infra:
-  network_mode: "host"
-
-gradle-bridge:
-  network_mode: "host"
-```
-
-Both containers share the Mac's network stack, so `localhost:7001` means the same thing everywhere.
-
-**Result:** The code runs unchanged and connects perfectly without any port forwarding tricks.
-
-## Technology Stack
-
-| Component | Version                      | Purpose                                        |
-| --------- | ---------------------------- | ---------------------------------------------- |
-| Java      | 1.5 (compiled) / 8 (runtime) | Cross-compilation: Java 5 source on Java 8 JVM |
-| Gradle    | 8.5                          | Modern build system                            |
-| MogileFS  | Latest (Docker)              | Distributed file storage backend               |
-| Docker    | v20+                         | Container orchestration                        |
-| Ubuntu    | Latest                       | Base OS for Gradle container                   |
+- ✅ Tests tracker connectivity (error handling)
+- ✅ Tests file write/read cycle
+- ✅ No source code modifications needed
 
 ## Project Structure
 
 ```
-java-mogilefs/
-├── README                          # Original MogileFS client docs
-├── README.md                        # This file (entry point)
-├── build.gradle                    # Gradle build configuration
-├── gradlew                         # Gradle wrapper script
-│
-├── infra/                          # Docker configuration
-│   ├── Dockerfile.gradle           # Java 8 + Gradle 8.5 image
-│   ├── docker-entrypoint.sh        # DNS resolution script
-│   ├── docker-compose.yml          # Service orchestration
-│   └── README.md                   # Infrastructure details
-│
-├── scripts/                        # Helper scripts
-│   ├── run-full-test.sh            # Automated test orchestration
-│   ├── init-mogilefs.sh            # Domain initialization
-│   └── README.md                   # Script documentation
-│
-└── java/                           # Original source code (unchanged)
-    └── com/guba/mogilefs/          # All Java files here
-        ├── MogileFS.java
-        ├── PooledMogileFSImpl.java
-        ├── test/
-        │   ├── URITest.java        # Safe: no infrastructure needed
-        │   ├── TestMogileFS.java   # Integration test
-        │   └── ...
-        └── ...
+├── README.md                    # This file
+├── build.gradle                 # Gradle 8.5 build (Java 8)
+├── java/                        # Original 2008 source code
+│   └── com/guba/mogilefs/
+├── infra/                       # Docker: MogileFS server
+│   └── docker-compose.yml
+└── scripts/                     # Test automation
+    └── run-full-test.sh
 ```
 
-## Prerequisites
+## Development
 
-### Required
-
-- **Docker** (any recent version)
-- **Docker Compose** (v2+)
-- **Mac with x86_64 CPU** (Intel/AMD, not ARM/Apple Silicon)
-
-### Not Required
-
-- Java installed locally
-- MogileFS installed locally
-- Modern tools (we provide everything in containers)
-
-## Common Tasks
-
-### Run Full Integration Tests
+**Start MogileFS:**
 
 ```bash
-bash scripts/run-full-test.sh
+cd infra && docker compose up -d
 ```
 
-### Run Only Safe Tests (No Backend)
+**Run specific test:**
 
 ```bash
-cd infra
-docker compose run --rm gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.URITest
+./gradlew testBackend    # Tracker connectivity
+./gradlew testMogileFS   # File operations
 ```
 
-### Run Specific Test Class (with Infrastructure)
+**Stop infrastructure:**
 
 ```bash
-cd infra
-docker compose up -d
-# Wait ~20 seconds for healthcheck, then:
-docker compose exec gradle-bridge gradle runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
+cd infra && docker compose down -v
 ```
 
-### Start Infrastructure and Keep Running
+## How It Works
 
-```bash
-cd infra
-docker compose up -d mogilefs-infra
-cd ..
-bash scripts/init-mogilefs.sh
-# Now infrastructure is running for manual testing
-```
+- **DNS:** `/etc/hosts` maps `qbert.guba.com` → `127.0.0.1`
+- **Ports:** Docker exposes 7001 (tracker), 7500/7501 (storage)
+- **Tests:** Run from your Mac, connect to Docker container
 
-### Stop Infrastructure
+See [infra/README.md](infra/README.md) for architecture details.
 
 ```bash
 cd infra

@@ -1,13 +1,15 @@
 services:
-  # Service 1: MogileFS Infrastructure (Tracker + Storage + MySQL)
-  # Uses host networking to eliminate 127.0.0.1 ambiguity - no socat needed!
+  # MogileFS Infrastructure (Tracker + Storage + MySQL)
+  # All-in-one container with port mappings for macOS Docker Desktop
   mogilefs-infra:
     image: hrchu/mogilefs-all-in-one:latest
     platform: linux/amd64
     container_name: mogilefs-infra
-    network_mode: "host"
-    # Note: ports section not needed with host networking
-    # All ports (7001, 7500, 7501, 3306) are automatically available on Mac
+    ports:
+      - "7001:7001"  # Tracker port
+      - "7500:7500"  # Storage port (dev1)
+      - "7501:7501"  # Storage port (dev2)
+      - "3306:3306"  # MySQL port
     environment:
       MOGILE_ADMIN_PASSWORD: admin
       MOGILE_TRACKER_PORT: 7001
@@ -20,24 +22,6 @@ services:
       timeout: 10s
       retries: 12
       start_period: 15s
-
-  # Service 2: Gradle 8.5 Bridge (Phase 3.3 - Modern build, Java 8)
-  gradle-bridge:
-    build:
-      context: ..
-      dockerfile: infra/Dockerfile.gradle
-    container_name: gradle-mogilefs-bridge
-    network_mode: "host"
-    depends_on:
-      mogilefs-infra:
-        condition: service_healthy
-    volumes:
-      - ..:/app
-      # Map the source file to Eric's hardcoded path inside the container
-      - ../java/com/guba/mogilefs/PooledMogileFSImpl.java:/Users/ericlambrecht/Projects/mogilefs/java/com/guba/mogilefs/PooledMogileFSImpl.java:ro
-    working_dir: /app
-    entrypoint: /docker-entrypoint.sh
-    command: tail -f /dev/null
 
 volumes:
   mogilefs-data:

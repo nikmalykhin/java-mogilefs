@@ -1,103 +1,47 @@
-# Helper Scripts
+# Test Scripts
 
-This directory contains automation scripts for infrastructure initialization and testing.
+Helper scripts for running integration tests.
 
 ## Quick Reference
 
-**Run everything with one command:**
+**Run all tests:**
 
 ```bash
-bash scripts/run-full-test.sh
-```
-
-This handles: cleanup → start infra → init domain → run tests → cleanup (on success or failure).
-
-**Or run tests from your Mac:**
-
-```bash
-# One-time setup
-bash scripts/setup-integration-tests.sh
-
-# Run tests
-./gradlew runIntegrationTests
+./scripts/run-full-test.sh
 ```
 
 ## Scripts
 
 ### run-full-test.sh
 
-Complete end-to-end automation script that orchestrates the entire testing workflow.
-
-**Usage (from project root):**
-
-```bash
-bash scripts/run-full-test.sh
-```
+Automated test orchestration - starts Docker, configures DNS, runs tests.
 
 **What it does:**
 
-**Docker Mode** (auto-detected when running inside container):
-
-1. Cleans up any previous containers and volumes
-2. Builds gradle-bridge Docker image
-3. Starts mogilefs-infra service
-4. Initializes MogileFS domain/storage class
-5. Starts gradle-bridge and runs integration tests inside Docker
-6. Cleans up infrastructure on exit
-
-**Host Mode** (auto-detected when running on Mac):
-
-1. Verifies MogileFS containers are running
-2. Runs setup-integration-tests.sh (DNS configuration)
+1. Starts MogileFS Docker container (if not running)
+2. Configures `/etc/hosts` for DNS resolution
 3. Initializes MogileFS domain/storage class
-4. Runs integration tests from your laptop
-
-**Expected output:**
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Phase 3.3b: Full Integration Test Suite (Gradle Bridge)
-Mode: HOST MACHINE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-[1/4] Verifying MogileFS Docker containers...
-✓ MogileFS containers already running
-
-[2/4] Configuring host system...
-✓ Setup complete
-
-[3/4] Initializing MogileFS domain and storage class...
-✓ Domain already configured
-
-[4/4] Running integration tests from host machine...
-✓ All integration tests passed on host machine
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✅ All tests passed!
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-```
+4. Runs integration tests from your Mac
 
 ### setup-integration-tests.sh
 
-Configures your Mac to run integration tests locally (host machine mode).
+One-time DNS configuration for running tests from your Mac.
 
-**Usage (from project root):**
+**Usage:**
 
 ```bash
-bash scripts/setup-integration-tests.sh
+./scripts/setup-integration-tests.sh
 ```
-
-**When to run:**
-
-- One time before first test run from your Mac
-- Or if you encounter DNS/connection issues
 
 **What it does:**
 
-1. Adds `qbert.guba.com` to `/etc/hosts` (requires sudo password)
-2. Verifies Docker containers are running
+- Adds `qbert.guba.com` to `/etc/hosts` (requires sudo)
+- Verifies Docker container is running
 
-**Expected output:**
+**When to run:**
+
+- Before first test run
+- If you get "connection refused" errors
 
 ```
 ==========================================

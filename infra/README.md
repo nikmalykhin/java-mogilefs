@@ -1,121 +1,54 @@
-# Infrastructure Configuration
+# Infrastructure
 
-This directory contains Docker configuration for running the Java MogileFS client with a local MogileFS server for testing.
-
-## Phase 3.3 Status: Host Networking
-
-**Current Architecture:** Docker host networking eliminates port forwarding complexity. All services run on `localhost` with direct port access.
-
-## Files
-
-- **docker-compose.yml** - Orchestrates two active services:
-  - `mogilefs-infra` - MogileFS all-in-one (Tracker + Storage + MySQL) with host networking
-  - `gradle-bridge` - Java 8 + Gradle 8.5 build environment with host networking
-- **Dockerfile.gradle** - Builds the `gradle-bridge` image (Java 8, Gradle 8.5)
-- **docker-entrypoint.sh** - Simplified passthrough script (host networking requires no special config)
+Docker configuration for MogileFS test server.
 
 ## Quick Start
 
-### Option 1: Automated Full Test (Recommended)
-
-From project root:
+**Automated (recommended):**
 
 ```bash
-bash scripts/run-full-test.sh
+cd .. && ./scripts/run-full-test.sh
 ```
 
-This script:
-
-1. Starts MogileFS infrastructure
-2. Initializes domain/storage class
-3. Runs integration tests in Docker
-4. Cleans up containers
-
-### Option 2: Manual Workflow
-
-**Start Infrastructure:**
+**Manual:**
 
 ```bash
-cd infra
+# Start MogileFS
 docker compose up -d
-```
 
-**Initialize MogileFS domain:**
+# Initialize domain (one-time)
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 domain add www.guba.com
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest
 
-```bash
-cd ..
-bash scripts/init-mogilefs.sh
-```
+# Run tests from your Mac
+cd .. && ./gradlew runIntegrationTests
 
-**Run tests inside Docker:**
-
-```bash
-cd infra
-docker compose exec gradle-bridge ./gradlew runIntegrationTests
-```
-
-**Cleanup:**
-
-```bash
+# Stop
 docker compose down -v
 ```
 
-### Option 3: Run Tests from Host Machine
+## What's Running
 
-**Prerequisites:** Docker containers running, `/etc/hosts` configured
+Single container: `mogilefs-infra`
 
-**Setup (one-time):**
+- MogileFS tracker (port 7001)
+- Storage servers (ports 7500, 7501)
+- MySQL database (port 3306)
 
-```bash
-bash scripts/setup-integration-tests.sh
-```
-
-**Run tests:**
-
-```bash
-./gradlew runIntegrationTests
-```
-
-This runs tests **on your Mac**, connecting to MogileFS in Docker via `localhost`.
-
-## Architecture: Host Networking
+## Architecture
 
 ```
-┌─────────────────────────────────────┐
-│   macOS (localhost)                 │
-│                                     │
-│   ┌─────────────────────────────┐   │
-│   │  mogilefs-infra container   │   │
-│   │  network_mode: host         │   │
-│   │                             │   │
-│   │  :7001 (tracker)            │ ◄─┼─── Direct access from Mac
-│   │  :7500 (storage)            │ ◄─┼─── No port forwarding needed
-│   │  :7501 (storage)            │ ◄─┼─── No socat needed
-│   └─────────────────────────────┘   │
-│                                     │
-│   ┌─────────────────────────────┐   │
-│   │  gradle-bridge container    │   │
-│   │  network_mode: host         │   │
-│   │                             │   │
-│   │  Connects to localhost:7001 │ ◄─┼─── Same localhost as Mac
-│   └─────────────────────────────┘   │
-└─────────────────────────────────────┘
+Your Mac (localhost)
+  │
+  ├─ ./gradlew runIntegrationTests
+  │
+  └─► Docker Container (mogilefs-infra)
+       ├─ 7001:7001 (tracker)
+       ├─ 7500:7500 (storage)
+       └─ 7501:7501 (storage)
 ```
 
-**Key Benefit:** `127.0.0.1:7500` means the same thing everywhere - no ambiguity.
-
-## Key Configuration Details
-
-- **Host Networking:** Both containers use `network_mode: "host"` for direct localhost access
-- **No Port Mapping:** Ports section removed; all ports automatically available on Mac
-- **No Network Bridge:** `mogilefs-net` removed; not needed with host networking
-- **Build Context:** Points to project root (`..`) to access source files
-- **Volumes:** Project root mounted as `/app` in gradle-bridge
-- **Hardcoded Path:** `/Users/ericlambrecht/...` mapped for legacy TestMogileFS compatibility
-- **Healthcheck:** Validates tracker on port 7001 before starting gradle-bridge
-- **Entrypoint:** Simplified; no DNS or port forwarding setup needed
-
-## Available Gradle Tasks
+Tests run on your Mac, connect to Docker via port mappings.
 
 From inside `gradle-bridge` container:
 
