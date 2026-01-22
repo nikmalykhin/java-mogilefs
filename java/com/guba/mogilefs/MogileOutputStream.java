@@ -23,7 +23,8 @@ import org.apache.commons.pool.ObjectPool;
 import org.apache.log4j.Logger;
 
 /**
- * This class is the interface for storing something into the PooledMogileFSImpl store.
+ * This class is the interface for storing something into the PooledMogileFSImpl
+ * store.
  * This differs from the original Perl in that I don't cache the whole damn
  * thing in memory, then spit it out when you close the stream. Instead, I just
  * open a connection to the storage node upon creation and start pumping things
@@ -35,14 +36,14 @@ import org.apache.log4j.Logger;
 public class MogileOutputStream extends OutputStream {
 
     private static Logger log = Logger.getLogger(MogileOutputStream.class);
-    
+
     /**
      * Number of milliseconds we'll let this socket block before we consider it
      * timed out.
      */
     public static final int SOCKET_TIMEOUT = 60000;
 
-    private ObjectPool backendPool;
+    private ObjectPool<Backend> backendPool;
 
     private String domain;
 
@@ -63,8 +64,8 @@ public class MogileOutputStream extends OutputStream {
     private BufferedReader reader;
 
     private int count;
-    
-    public MogileOutputStream(ObjectPool backendPool, String domain, String fid,
+
+    public MogileOutputStream(ObjectPool<Backend> backendPool, String domain, String fid,
             String path, String devid, String key,
             long totalBytes) throws MalformedURLException,
             StorageCommunicationException {
@@ -81,7 +82,7 @@ public class MogileOutputStream extends OutputStream {
             // open a connection to the server
             socket = new Socket();
             socket.setSoTimeout(SOCKET_TIMEOUT);
-            URL parsedPath = new URL(path);
+            URL parsedPath = java.net.URI.create(path).toURL();
             socket.connect(new InetSocketAddress(parsedPath.getHost(),
                     parsedPath.getPort()));
             out = socket.getOutputStream();
@@ -100,7 +101,8 @@ public class MogileOutputStream extends OutputStream {
             // problem talking to the storage server
             throw new StorageCommunicationException(
                     "problem initiating communication with storage server before storing "
-                            + path + ": " + e.getMessage(), e);
+                            + path + ": " + e.getMessage(),
+                    e);
         }
     }
 
@@ -152,7 +154,7 @@ public class MogileOutputStream extends OutputStream {
         Backend backend = null;
         try {
             backend = borrowBackend();
-            
+
             Map closeResponse = backend.doRequest("create_close", new String[] {
                     "fid", fid, "devid", devid, "domain", domain, "size",
                     Long.toString(totalBytes), "key", key, "path", path });
@@ -160,7 +162,7 @@ public class MogileOutputStream extends OutputStream {
             if (closeResponse == null) {
                 throw new IOException(backend.getLastErrStr());
             }
-            
+
         } catch (IOException e) {
             // you know, I could throw this in the conditional above, but this
             // just seems clearer to me for some reason...
@@ -168,9 +170,9 @@ public class MogileOutputStream extends OutputStream {
                 invalidateBackend(backend);
                 backend = null;
             }
-            
+
             throw e;
-            
+
         } catch (NoTrackersException e) {
             // I hate to not pass this on, but in the interest of keeping
             // this easily integrated with various clients, I'll wrap this
@@ -179,7 +181,7 @@ public class MogileOutputStream extends OutputStream {
                 invalidateBackend(backend);
                 backend = null;
             }
-            
+
             throw new IOException(e.getMessage());
 
         } catch (TrackerCommunicationException e) {
@@ -187,9 +189,9 @@ public class MogileOutputStream extends OutputStream {
                 invalidateBackend(backend);
                 backend = null;
             }
-            
+
             throw new IOException(e.getMessage());
-        
+
         } finally {
             if (backend != null)
                 returnBackend(backend);
@@ -211,7 +213,8 @@ public class MogileOutputStream extends OutputStream {
             count++;
             out.write(b);
         } catch (IOException e) {
-            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node " + socket.getInetAddress().getHostName());
+            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node "
+                    + socket.getInetAddress().getHostName());
             throw e;
         }
     }
@@ -224,7 +227,8 @@ public class MogileOutputStream extends OutputStream {
             count += len;
             out.write(b, off, len);
         } catch (IOException e) {
-            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node " + socket.getInetAddress().getHostName());
+            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node "
+                    + socket.getInetAddress().getHostName());
             throw e;
         }
     }
@@ -237,38 +241,39 @@ public class MogileOutputStream extends OutputStream {
             count += b.length;
             out.write(b);
         } catch (IOException e) {
-            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node " + socket.getInetAddress().getHostName());
+            log.error("wrote at most " + count + "/" + totalBytes + " of stream to storage node "
+                    + socket.getInetAddress().getHostName());
             throw e;
         }
     }
-    
+
     private Backend borrowBackend() throws NoTrackersException {
         try {
             return (Backend) backendPool.borrowObject();
-            
+
         } catch (Exception e) {
             log.error(e);
             throw new NoTrackersException();
         }
     }
-    
+
     private void returnBackend(Backend backend) {
         try {
             backendPool.returnObject(backend);
-            
+
         } catch (Exception e) {
             // I think we can ignore this.
             log.warn(e);
         }
     }
-    
+
     private void invalidateBackend(Backend backend) {
         try {
             backendPool.invalidateObject(backend);
-            
+
         } catch (Exception e) {
             // I think we can ignore this
             log.warn(e);
         }
-    }    
+    }
 }

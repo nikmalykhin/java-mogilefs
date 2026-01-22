@@ -159,7 +159,7 @@ public class Backend {
 
             // something went wrong, so mark the host as dead
             log.warn("marking host " + host + " as dead");
-            deadHosts.put(host, new Long(now));
+            deadHosts.put(host, Long.valueOf(now));
         }
 
         // didn't find anything! throw an exception!
@@ -254,7 +254,7 @@ public class Backend {
 
                 if (log.isDebugEnabled())
                     log.debug("error message from tracker: " + lastErr + ", " + lastErrStr);
-                
+
                 return null;
             }
 
@@ -480,6 +480,7 @@ class SocketWithReaderAndWriter {
      * 
      */
 
+    @SuppressWarnings("removal")
     protected void finalize() {
         close();
     }

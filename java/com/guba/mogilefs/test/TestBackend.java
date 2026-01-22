@@ -28,14 +28,14 @@ public class TestBackend {
         BasicConfigurator.configure();
 
         // Test 1: Constructor and connection
-        List trackers = new ArrayList();
+        List<InetSocketAddress> trackers = new ArrayList<InetSocketAddress>();
         trackers.add(new InetSocketAddress("qbert.guba.com", 7001));
         Backend backend = new Backend(trackers, true);
         log.debug("constructed and connected to qbert ok");
 
         // Test 2: ECHO command - verify Backend correctly handles error responses
         // Note: ECHO is NOT a valid MogileFS command - we expect an error response
-        List trackers2 = new ArrayList();
+        List<InetSocketAddress> trackers2 = new ArrayList<InetSocketAddress>();
         trackers2.add(new InetSocketAddress("qbert.guba.com", 7001));
         Backend backend2 = new Backend(trackers2, true);
         Map response = backend2.doRequest("ECHO", new String[] { "eric", "r00lez" });
