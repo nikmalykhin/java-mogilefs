@@ -163,8 +163,14 @@ if (paths == null) {
 ### Phase 3.4 Prerequisites (Before Refactoring)
 
 1. ✅ **Make tests fail on errors** - COMPLETED in Phase 3.3c
-2. **Replace ECHO test with noop** - TestBackend currently uses invalid ECHO command; should use `noop` (standard MogileFS connectivity test)
-3. **Add domain initialization check** - Prevent silent test skipping
+2. ✅ **Add Java 5 Generics** - COMPLETED in Phase 3.4
+   - Introduced `ObjectPool<Backend>`, `List<InetSocketAddress>` generics
+   - Replaced deprecated `new Long()` with `Long.valueOf()`
+   - Fixed deprecated `new URL()` with `URI.create().toURL()`
+   - Added `@SuppressWarnings("removal")` for `finalize()` method deprecation
+   - Eliminated 12 compiler warnings
+3. **Replace ECHO test with noop** - TestBackend currently uses invalid ECHO command; should use `noop` (standard MogileFS connectivity test)
+4. **Add domain initialization check** - Prevent silent test skipping
 
 ### Phase 3.5 (After God Class Refactoring)
 
