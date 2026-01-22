@@ -14,6 +14,13 @@ java {
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
+// Phase 3.4: Enable verbose compiler warnings
+// Applies to both :compileJava and :compileTestJava
+// Show all unchecked operations (raw types, unsafe casts) and deprecation warnings
+tasks.withType(JavaCompile) {
+    options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
+}
+
 repositories {
     mavenCentral()
 }
