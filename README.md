@@ -34,8 +34,11 @@ Runs 2008-era Java code against a modern MogileFS backend in Docker:
 ```
 ├── README.md                    # This file
 ├── build.gradle                 # Gradle 8.5 build (Java 8)
-├── java/                        # Original 2008 source code
-│   └── com/guba/mogilefs/
+├── src/
+│   ├── main/java/               # Production code (2008 origin)
+│   │   └── com/guba/mogilefs/
+│   └── test/java/               # Test code
+│       └── com/guba/mogilefs/test/
 ├── infra/                       # Docker: MogileFS server
 │   └── docker-compose.yml
 └── scripts/                     # Test automation
@@ -67,14 +70,9 @@ cd infra && docker compose down -v
 
 - **DNS:** `/etc/hosts` maps `qbert.guba.com` → `127.0.0.1`
 - **Ports:** Docker exposes 7001 (tracker), 7500/7501 (storage)
-- **Tests:** Run from your Mac, connect to Docker container
+- **Tests:** Run from your Mac, connect to Docker via localhost
 
 See [infra/README.md](infra/README.md) for architecture details.
-
-```bash
-cd infra
-docker compose down -v
-```
 
 ## Troubleshooting
 
@@ -109,49 +107,14 @@ bash scripts/run-full-test.sh
 
 ## Documentation
 
-- **[PHASE-3.3-COMPLETION.md](PHASE-3.3-COMPLETION.md)** - Phase 3.3 architecture and completion report
-- **[FUTURE-IMPROVEMENTS.md](FUTURE-IMPROVEMENTS.md)** - Planned improvements for Phase 3.4
+- **[PHASE-4.0-MIGRATION.md](PHASE-4.0-MIGRATION.md)** - Phase 4.0 project structure standardization
+- **[FUTURE-IMPROVEMENTS.md](FUTURE-IMPROVEMENTS.md)** - Planned improvements
 - **[infra/README.md](infra/README.md)** - Docker infrastructure configuration details
 - **[scripts/README.md](scripts/README.md)** - Script documentation and usage
 - **[README](README)** - Original MogileFS client library documentation
 
-## How It Works Under The Hood
+## About
 
-1. **Build Phase:** Dockerfile installs Java 6 and Ant, then compiles Java source
-2. **Network Phase:** Docker creates private network with MogileFS services
-3. **DNS Trick:** Container entrypoint script adds hardcoded hostname to `/etc/hosts`
-4. **File Trick:** Volume mounts put files at developer's expected paths
-5. **Execution:** Java code connects to tracker and uploads files unchanged
-6. **Cleanup:** Infrastructure automatically removed on test completion
+2008-era Java MogileFS client preserved and containerized. Docker handles networking and DNS - no code changes needed.
 
-## Success Indicators
-
-When tests pass, you'll see:
-
-✅ **URITest output:**
-
-```
-parsed //somehost.somewhere.com:800
-authority is somehost.somewhere.com:800
-```
-
-✅ **TestMogileFS output:**
-
-```
-connected to tracker qbert.guba.com
-response: OK fid=2&devid=2&path=http://127.0.0.1:7500/...
-```
-
-Both indicate the legacy code is working perfectly in the modern Docker environment.
-
----
-
-## Historical Context
-
-**Original code:** 2008-era Java MogileFS client written for a specific PC environment
-**Problem:** Hardcoded paths and hostnames made it impossible to run elsewhere
-**Solution:** Docker networking and filesystem virtualization (no code changes)
-
-**Preserve the Era. Contain, Don't Modernize.**
-
-For more information about MogileFS, visit: <http://www.danga.com/mogilefs/>
+For more information about MogileFS: <http://www.danga.com/mogilefs/>
