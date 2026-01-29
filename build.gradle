@@ -27,6 +27,11 @@ dependencies {
     testImplementation 'org.junit.platform:junit-platform-engine:1.10.0'
     testImplementation 'org.junit.platform:junit-platform-runner:1.10.0'
     testImplementation 'org.junit.platform:junit-platform-console-standalone:1.10.0'
+    
+    // TestContainers for infrastructure-as-code
+    testImplementation platform('org.testcontainers:testcontainers-bom:1.20.1')
+    testImplementation 'org.testcontainers:testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
 }
 
 tasks.register('compile') {
@@ -36,6 +41,12 @@ tasks.register('compile') {
 test {
     useJUnitPlatform()
     outputs.upToDateWhen { false }
+    
+    // Pass Colima Docker socket to test process
+    def dockerHost = System.getenv('DOCKER_HOST')
+    if (dockerHost) {
+        systemProperty 'DOCKER_HOST', dockerHost
+    }
 }
 
 jar {

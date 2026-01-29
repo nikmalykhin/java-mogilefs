@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Tag;
 import com.guba.mogilefs.MogileFS;
 import com.guba.mogilefs.PooledMogileFSImpl;
 
-public class StoreALot {
+public class StoreALot extends AbstractIntegrationTest {
 
     private static Logger log = Logger.getLogger(StoreALot.class);
 
@@ -32,7 +32,7 @@ public class StoreALot {
         int threadCount = 5; // Number of concurrent storage operations
 
         MogileFS mfs = new PooledMogileFSImpl("www.guba.com",
-                new String[] { "qbert.guba.com:7001" }, 0, 2, 10000);
+                new String[] { getTrackerConnectionString() }, 0, 2, 10000);
 
         CountDownLatch latch = new CountDownLatch(threadCount);
         AtomicInteger successCount = new AtomicInteger(0);

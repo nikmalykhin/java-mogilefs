@@ -25,7 +25,7 @@ import com.guba.mogilefs.MogileFS;
  * @author ericlambrecht
  * 
  */
-public class TestMogileFS {
+public class TestMogileFS extends AbstractIntegrationTest {
 
     private static Logger log = Logger.getLogger(TestMogileFS.class);
 
@@ -35,7 +35,7 @@ public class TestMogileFS {
         BasicConfigurator.configure();
 
         MogileFS mfs = new PooledMogileFSImpl("www.guba.com",
-                new String[] { "qbert.guba.com:7001" }, 0, 1, 10000);
+                new String[] { getTrackerConnectionString() }, 0, 1, 10000);
 
         // Write file with key "eric" - use the README as test payload
         File file = new File("README.md");

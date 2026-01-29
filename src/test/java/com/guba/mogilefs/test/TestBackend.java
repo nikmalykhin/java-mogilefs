@@ -22,7 +22,7 @@ import com.guba.mogilefs.Backend;
  * @author ericlambrecht
  * 
  */
-public class TestBackend {
+public class TestBackend extends AbstractIntegrationTest {
     private static Logger log = Logger.getLogger(TestBackend.class);
 
     @Test
@@ -31,15 +31,19 @@ public class TestBackend {
         BasicConfigurator.configure();
 
         // Test 1: Constructor and connection
+        String trackerConnectionString = getTrackerConnectionString();
+        String[] hostPort = trackerConnectionString.split(":");
         List<InetSocketAddress> trackers = new ArrayList<InetSocketAddress>();
-        trackers.add(new InetSocketAddress("qbert.guba.com", 7001));
+        trackers.add(new InetSocketAddress(hostPort[0], Integer.parseInt(hostPort[1])));
         Backend backend = new Backend(trackers, true);
         Assertions.assertNotNull(backend, "Backend should be successfully constructed and connected");
 
         // Test 2: ECHO command - verify Backend correctly handles error responses
         // Note: ECHO is NOT a valid MogileFS command - we expect an error response
+        String trackerConnectionString2 = getTrackerConnectionString();
+        String[] hostPort2 = trackerConnectionString2.split(":");
         List<InetSocketAddress> trackers2 = new ArrayList<InetSocketAddress>();
-        trackers2.add(new InetSocketAddress("qbert.guba.com", 7001));
+        trackers2.add(new InetSocketAddress(hostPort2[0], Integer.parseInt(hostPort2[1])));
         Backend backend2 = new Backend(trackers2, true);
         Map<?, ?> response = backend2.doRequest("ECHO", new String[] { "eric", "r00lez" });
 
