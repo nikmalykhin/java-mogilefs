@@ -5,18 +5,11 @@ plugins {
 group = 'com.guba'
 version = '1.1'
 
-// Phase 3.3: THE SEVERING
-// Ant has been fully decommissioned. Gradle now owns the build lifecycle.
-// We have upgraded to Java 8 and migrated to Maven Central dependencies.
-
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-// Phase 3.4: Enable verbose compiler warnings
-// Applies to both :compileJava and :compileTestJava
-// Show all unchecked operations (raw types, unsafe casts) and deprecation warnings
 tasks.withType(JavaCompile) {
     options.compilerArgs << '-Xlint:unchecked' << '-Xlint:deprecation'
 }
@@ -26,85 +19,26 @@ repositories {
 }
 
 dependencies {
-    // Native Gradle dependencies from Maven Central (replacing lib/ jars)
     implementation 'commons-pool:commons-pool:1.6'
     implementation 'log4j:log4j:1.2.17'
+    
+    // JUnit 5 for integration tests
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testImplementation 'org.junit.platform:junit-platform-engine:1.10.0'
+    testImplementation 'org.junit.platform:junit-platform-runner:1.10.0'
+    testImplementation 'org.junit.platform:junit-platform-console-standalone:1.10.0'
 }
 
-// Alias 'compile' to 'compileJava' for backwards compatibility with Ant scripts
 tasks.register('compile') {
     dependsOn 'compileJava'
+}
+
+test {
+    useJUnitPlatform()
+    outputs.upToDateWhen { false }
 }
 
 jar {
     archiveFileName = "mogilefs-${version}.jar"
     from sourceSets.main.output
-}
-
-// Phase 3.2: Add a generic JavaExec runner for legacy main classes
-// Usage: ./gradlew runLegacyTest -PmainClass=com.guba.mogilefs.test.TestMogileFS
-tasks.register('runLegacyTest', JavaExec) { t ->
-    // Require -PmainClass to specify which class to execute
-    def mc = project.findProperty('mainClass')
-    if (!mc) {
-        throw new GradleException("Missing -PmainClass. Example: -PmainClass=com.guba.mogilefs.test.TestMogileFS")
-    }
-
-    // Gradle 7.6 syntax for main class
-    mainClass.set(mc.toString())
-
-    // Classpath includes:
-    // 1) Gradle-compiled classes from main and test sourceSets
-    // 2) Runtime dependencies (commons-pool, log4j from Maven Central)
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-
-    // Ensure classes exist by compiling as needed
-    dependsOn 'compileJava', 'compileTestJava'
-
-    // Allow passing program args via -Pargs="..." (optional convenience)
-    def argLine = (project.findProperty('args') ?: '').toString().trim()
-    if (argLine) {
-        args argLine.split('\\s+')
-    }
-}
-
-// Phase 3.3b: Individual integration tests
-tasks.register('testBackend', JavaExec) {
-    group = 'verification'
-    description = 'Run TestBackend (tracker connectivity test)'
-    mainClass.set('com.guba.mogilefs.test.TestBackend')
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-    dependsOn 'compileJava', 'compileTestJava'
-}
-
-tasks.register('testMogileFS', JavaExec) {
-    group = 'verification'
-    description = 'Run TestMogileFS (file storage/retrieval test)'
-    mainClass.set('com.guba.mogilefs.test.TestMogileFS')
-    classpath = sourceSets.main.runtimeClasspath + sourceSets.test.runtimeClasspath
-    dependsOn 'compileJava', 'compileTestJava'
-}
-
-// Phase 3.3b: Run all integration tests (TestBackend + TestMogileFS)
-// Usage: ./gradlew runIntegrationTests
-tasks.register('runIntegrationTests') {
-    group = 'verification'
-    description = 'Run all integration tests (TestBackend and TestMogileFS)'
-    dependsOn 'testBackend', 'testMogileFS'
-    
-    doFirst {
-        println "=========================================="
-        println "INTEGRATION TEST SUITE - Phase 3.3b"
-        println "=========================================="
-        println "\n[1/2] Running TestBackend..."
-        println "      Verifying tracker connection and ECHO command..."
-    }
-    
-    doLast {
-        println "\n[2/2] Running TestMogileFS..."
-        println "      Verifying file write and read operations..."
-        println "\n=========================================="
-        println "✅ ALL INTEGRATION TESTS PASSED!"
-        println "=========================================="
-    }
 }

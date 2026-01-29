@@ -60,7 +60,7 @@ docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.c
 
 # Step 4: Run integration tests from host
 echo ""
-echo "[4/4] Running integration tests from host machine..."
+echo "[4/4] Running tests from host machine..."
 cd "$PROJECT_ROOT"
-./gradlew runIntegrationTests
-echo "✓ All integration tests passed on host machine"
+./gradlew test
+echo "✓ All tests passed on host machine"
