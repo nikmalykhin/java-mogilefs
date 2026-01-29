@@ -21,7 +21,7 @@ docker exec mogilefs-infra mogadm --trackers=localhost:7001 domain add www.guba.
 docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest
 
 # Run tests from your Mac
-cd .. && ./gradlew runIntegrationTests
+cd .. && ./gradlew test
 
 # Stop
 docker compose down -v
@@ -50,7 +50,7 @@ Your Mac (localhost)
 
 Tests run on your Mac, connect to Docker via port mappings.
 
-From inside `gradle-bridge` container:
+Available Gradle tasks:
 
 ```bash
 # Compile Java code
@@ -59,12 +59,11 @@ From inside `gradle-bridge` container:
 # Build JAR
 ./gradlew jar
 
-# Run specific test
-./gradlew testBackend
-./gradlew testMogileFS
+# Run all tests (JUnit 5)
+./gradlew test
 
-# Run all integration tests
-./gradlew runIntegrationTests
+# Clean build and test
+./gradlew clean build test
 ```
 
 ## Troubleshooting

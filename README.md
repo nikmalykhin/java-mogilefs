@@ -13,7 +13,7 @@ A Java client library for **MogileFS**, a distributed file storage system.
 **Run tests directly:**
 
 ```bash
-./gradlew runIntegrationTests
+./gradlew test
 ```
 
 ## What You Need
@@ -53,11 +53,10 @@ Runs 2008-era Java code against a modern MogileFS backend in Docker:
 cd infra && docker compose up -d
 ```
 
-**Run specific test:**
+**Build and test:**
 
 ```bash
-./gradlew testBackend    # Tracker connectivity
-./gradlew testMogileFS   # File operations
+./gradlew clean build test
 ```
 
 **Stop infrastructure:**
@@ -104,6 +103,14 @@ chmod +x scripts/run-full-test.sh
 chmod +x scripts/init-mogilefs.sh
 bash scripts/run-full-test.sh
 ```
+
+## Test Suite
+
+All tests use **JUnit 5** and run via `./gradlew test`:
+
+- **TestBackend** - Validates tracker connection and error handling
+- **TestMogileFS** - Validates file storage/retrieval lifecycle
+- **StoreALot** - Validates concurrent storage operations (load test)
 
 ## Documentation
 

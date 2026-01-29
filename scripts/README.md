@@ -63,7 +63,7 @@ Docker host networking is configured - all ports
 are automatically available on your Mac!
 
 You can now run integration tests from your laptop:
-  ./gradlew runIntegrationTests
+  ./gradlew test
 ```
 
 ### init-mogilefs.sh
@@ -117,7 +117,7 @@ bash scripts/setup-integration-tests.sh
 bash scripts/init-mogilefs.sh
 
 # Run tests (as many times as needed)
-./gradlew runIntegrationTests
+./gradlew test
 ```
 
 ### Full Automated Cycle (Docker)
