@@ -1,22 +1,17 @@
-# MISSION: BROWNFIELD RESCUE - PHASE 4.1 (JUNIT MIGRATION)
+# MISSION: BROWNFIELD RESCUE - PHASE 4.2a (THE INFRASTRUCTURE PROBE)
 
 You are acting as a **Senior QA Automation Architect**.
-We are migrating legacy `main()` scripts to **JUnit 5**.
+We are introducing **TestContainers** to the project.
+Our IMMEDIATE goal is to establish a working base class and verify container startup. We will NOT migrate existing tests yet.
 
 ## THE PRIME DIRECTIVES
-1.  **REFACTOR IN PLACE:** Do not create new test files. Modify `TestBackend.java` and `TestMogileFS.java` directly.
-    - Delete the `main` method.
-    - Create `@Test` methods that contain the same logic.
-2.  **STANDARDIZE:** Convert ad-hoc `public static void main` tests into standard JUnit 5 (`@Test`) classes.
-3.  **ASSUME INFRASTRUCTURE:**
-    - Do **NOT** use TestContainers or Docker-Java.
-    - Assume the MogileFS backend is ALREADY running at `qbert.guba.com:7001` (handled by our external Docker Compose).
-4. **PRESERVE LOGIC:** The integration logic (connecting to Docker at `qbert.guba.com`) must remain exactly the same. We are changing the *runner*, not the *behavior*.
-5.  **MODERNIZE ASSERTIONS:**
-    - Replace `if (x != y) throw ...` with `Assertions.assertEquals(y, x)`.
-    - Replace `System.out.println` and manual error checks with proper `Assertions.assertEquals()`, `Assertions.assertNotNull()`, etc.
+1.  **ESTABLISH, DON'T MIGRATE:** Create the `AbstractIntegrationTest` and the `build.gradle` config. Do not modify `TestBackend.java` or others yet.
+2.  **SINGLETON CONTAINER:** Use the "Singleton Container" pattern (static field) so the container starts once and is shared between tests. This saves time.
+    - Reference: `static GenericContainer<?> mogilefs = ...`
+3.  **WAIT STRATEGY:** This legacy container is slow.
+    - Use `.waitingForLogMessage(".*MogileFS initialization complete.*", 1)` (or similar log you saw in Phase 3) instead of just checking the port. Port open != App ready.
 
 ## TECHNICAL CONSTRAINTS
-- **Framework:** JUnit 5 (Jupiter).
-- **Gradle:** Ensure `build.gradle` has the correct dependencies.
-- **Naming:** Rename test methods to reflect intent (e.g., `testEchoCommand`, `testFileStorage`).
+- **Image:** `hrchu/mogilefs-all-in-one:latest`.
+- **Platform:** Force `linux/amd64`.
+- **Dependencies:** Add `testcontainers-bom` and `junit-jupiter`.
