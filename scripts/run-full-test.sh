@@ -1,7 +1,7 @@
 #!/bin/bash
 # Phase 3.3c: Integration Test Suite (Host Machine Only)
-# Orchestrates: verify containers → setup host → init domain → run tests
-# Simplified for local development on macOS
+# Orchestrates: verify containers → setup host → wait for auto-init → run tests
+# Domain initialization is now automatic via docker-compose
 
 set -e
 
@@ -52,11 +52,16 @@ echo "[2/4] Configuring host system..."
 chmod +x "$PROJECT_ROOT/scripts/setup-integration-tests.sh"
 bash "$PROJECT_ROOT/scripts/setup-integration-tests.sh"
 
-# Step 3: Initialize MogileFS domain
+# Step 3: Wait for domain auto-initialization
 echo ""
-echo "[3/4] Initializing MogileFS domain and storage class..."
-docker exec mogilefs-infra mogadm --trackers=localhost:7001 domain add www.guba.com 2>/dev/null || echo "✓ Domain already configured"
-docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest 2>/dev/null || echo "✓ Storage class already configured"
+echo "[3/4] Waiting for domain auto-initialization..."
+for i in {1..10}; do
+    if docker exec mogilefs-infra mogadm --trackers=localhost:7001 class list 2>/dev/null | grep -q "www.guba.com"; then
+        echo "✓ Domain initialized successfully"
+        break
+    fi
+    sleep 2
+done
 
 # Step 4: Run integration tests from host
 echo ""

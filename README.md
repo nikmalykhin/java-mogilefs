@@ -69,6 +69,7 @@ cd infra && docker compose down -v
 
 - **DNS:** `/etc/hosts` maps `qbert.guba.com` → `127.0.0.1`
 - **Ports:** Docker exposes 7001 (tracker), 7500/7501 (storage)
+- **Domain:** Auto-initializes `www.guba.com` with `oneDeviceTest` storage class on startup
 - **Tests:** Run from your Mac, connect to Docker via localhost
 
 See [infra/README.md](infra/README.md) for architecture details.
@@ -100,7 +101,6 @@ bash scripts/run-full-test.sh
 
 ```bash
 chmod +x scripts/run-full-test.sh
-chmod +x scripts/init-mogilefs.sh
 bash scripts/run-full-test.sh
 ```
 

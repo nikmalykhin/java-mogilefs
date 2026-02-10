@@ -16,6 +16,23 @@ services:
       MOGILE_STORAGE_PORT: 7500
     volumes:
       - mogilefs-data:/var/lib/mogdata
+    command: >
+      bash -c "
+      /run.sh &
+      echo 'Waiting for tracker to be ready...';
+      for i in {1..30}; do
+        if nc -z localhost 7001 2>/dev/null; then
+          echo 'Tracker is ready, initializing domain...';
+          mogadm --trackers=localhost:7001 domain add www.guba.com 2>/dev/null || true;
+          mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest 2>/dev/null || true;
+          mogadm --trackers=localhost:7001 class modify www.guba.com oneDeviceTest --mindevcount=1 2>/dev/null || true;
+          echo 'Domain initialization complete';
+          break;
+        fi;
+        sleep 2;
+      done;
+      wait
+      "
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "7001" ]
       interval: 5s

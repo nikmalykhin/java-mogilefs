@@ -20,7 +20,7 @@ Automated test orchestration - starts Docker, configures DNS, runs tests.
 
 1. Starts MogileFS Docker container (if not running)
 2. Configures `/etc/hosts` for DNS resolution
-3. Initializes MogileFS domain/storage class
+3. Waits for automatic domain initialization
 4. Runs integration tests from your Mac
 
 ### setup-integration-tests.sh
@@ -66,40 +66,22 @@ You can now run integration tests from your laptop:
   ./gradlew test
 ```
 
-### init-mogilefs.sh
+### Domain Initialization
 
-Initializes the MogileFS backend with required domain and storage class configuration.
+**Automatic:** Domain initialization (`www.guba.com` with `oneDeviceTest` storage class) is now handled automatically by docker-compose on container startup.
 
-**Usage (from project root):**
+**Manual verification:**
 
 ```bash
-bash scripts/init-mogilefs.sh
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 class list
 ```
-
-**When to run:**
-
-- After starting MogileFS containers for the first time
-- Automatically run by `run-full-test.sh`
-
-**What it does:**
-
-1. Waits for mogilefs-infra tracker to respond on port 7001
-2. Registers the `www.guba.com` domain
-3. Creates the `oneDeviceTest` storage class (mindevcount=1)
-4. Verifies the configuration
 
 **Expected output:**
 
 ```
-Initializing MogileFS domain configuration...
-✓ Tracker is responsive
-Registering domain www.guba.com...
-Registering class oneDeviceTest...
-Verifying configuration...
  domain               class                mindevcount   replpolicy
  www.guba.com         default                   2        MultipleHosts()
  www.guba.com         oneDeviceTest             1        MultipleHosts()
-✓ MogileFS initialization complete!
 ```
 
 ## Workflow Examples
@@ -107,14 +89,11 @@ Verifying configuration...
 ### Quick Test Cycle (Host Machine)
 
 ```bash
-# Start MogileFS (once)
+# Start MogileFS (once - domain auto-initializes)
 cd infra && docker compose up -d && cd ..
 
 # Setup (once)
 bash scripts/setup-integration-tests.sh
-
-# Initialize domain (once per container restart)
-bash scripts/init-mogilefs.sh
 
 # Run tests (as many times as needed)
 ./gradlew test

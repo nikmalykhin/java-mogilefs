@@ -13,12 +13,8 @@ cd .. && ./scripts/run-full-test.sh
 **Manual:**
 
 ```bash
-# Start MogileFS
+# Start MogileFS (domain initialization is automatic)
 docker compose up -d
-
-# Initialize domain (one-time)
-docker exec mogilefs-infra mogadm --trackers=localhost:7001 domain add www.guba.com
-docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest
 
 # Run tests from your Mac
 cd .. && ./gradlew test
@@ -34,6 +30,7 @@ Single container: `mogilefs-infra`
 - MogileFS tracker (port 7001)
 - Storage servers (ports 7500, 7501)
 - MySQL database (port 3306)
+- Auto-initializes `www.guba.com` domain with `oneDeviceTest` storage class
 
 ## Architecture
 
@@ -96,10 +93,18 @@ bash scripts/setup-integration-tests.sh
 
 **Symptom:** `ERR unreg_domain`
 
-**Fix:** Initialize MogileFS domain:
+**Cause:** Container is still initializing or initialization failed.
+
+**Fix:** Wait a few seconds for auto-initialization to complete, or check container logs:
 
 ```bash
-bash scripts/init-mogilefs.sh
+docker logs mogilefs-infra
+```
+
+To manually verify domain:
+
+```bash
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 class list
 ```
 
 ### Port already in use
