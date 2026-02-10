@@ -1,27 +1,36 @@
 # Test Scripts
 
-Helper scripts for running integration tests.
+Helper scripts for running the complete test suite (integration tests + load test).
 
 ## Quick Reference
 
-**Run all tests:**
+**Run all tests (JUnit + concurrent load test):**
 
 ```bash
 ./scripts/run-full-test.sh
 ```
 
+This executes:
+
+1. JUnit integration tests (TestBackend, TestMogileFS)
+2. Concurrent load test (StoreALot: 1,000 operations across 10 threads)
+
 ## Scripts
 
 ### run-full-test.sh
 
-Automated test orchestration - starts Docker, configures DNS, runs tests.
+Automated test orchestration - starts Docker, configures DNS, runs JUnit tests and load test.
 
 **What it does:**
 
 1. Starts MogileFS Docker container (if not running)
 2. Configures `/etc/hosts` for DNS resolution
 3. Waits for automatic domain initialization
-4. Runs integration tests from your Mac
+4. Runs JUnit integration tests from your Mac
+5. Runs concurrent load test (1,000 file stores across 10 threads)
+   - Tests thread-safe ArrayList-based connection pooling
+   - Verifies no `ConcurrentModificationException` under load
+   - Reports throughput (ops/sec)
 
 ### setup-integration-tests.sh
 

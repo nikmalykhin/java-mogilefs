@@ -10,6 +10,13 @@ Docker configuration for MogileFS test server.
 cd .. && ./scripts/run-full-test.sh
 ```
 
+This will:
+
+1. Start MogileFS Docker container
+2. Configure DNS (`qbert.guba.com` → `127.0.0.1`)
+3. Run JUnit integration tests
+4. Run concurrent load test (1,000 operations)
+
 **Manual:**
 
 ```bash
@@ -17,7 +24,8 @@ cd .. && ./scripts/run-full-test.sh
 docker compose up -d
 
 # Run tests from your Mac
-cd .. && ./gradlew test
+cd .. && ./gradlew test         # JUnit tests
+cd .. && ./gradlew runStoreALot # Load test
 
 # Stop
 docker compose down -v
@@ -56,11 +64,14 @@ Available Gradle tasks:
 # Build JAR
 ./gradlew jar
 
-# Run all tests (JUnit 5)
+# Run JUnit integration tests
 ./gradlew test
 
-# Clean build and test
-./gradlew clean build test
+# Run concurrent load test (stress test with 1,000 operations)
+./gradlew runStoreALot
+
+# Run all tests and load test
+./gradlew clean build test runStoreALot
 ```
 
 ## Troubleshooting

@@ -9,7 +9,7 @@ PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 INFRA_DIR="$PROJECT_ROOT/infra"
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "Phase 3.3c: Integration Test Suite"
+echo "Complete Test Suite: Integration Tests + Load Test"
 echo "Mode: HOST MACHINE"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -22,6 +22,8 @@ cleanup() {
     
     if [ $exit_code -eq 0 ]; then
         echo "✅ All tests passed!"
+        echo "   - JUnit integration tests: PASSED"
+        echo "   - Concurrent load test: PASSED (thread-safe pool confirmed)"
     else
         echo "❌ Tests failed (exit code: $exit_code)"
     fi
@@ -65,7 +67,14 @@ done
 
 # Step 4: Run integration tests from host
 echo ""
-echo "[4/4] Running tests from host machine..."
+echo "[4/5] Running JUnit integration tests..."
 cd "$PROJECT_ROOT"
 ./gradlew test
-echo "✓ All tests passed on host machine"
+echo "✓ JUnit integration tests passed"
+
+# Step 5: Run concurrent load test
+echo ""
+echo "[5/5] Running concurrent load test (verifying thread-safe pooling)..."
+echo "This will execute 1,000 concurrent file store operations (100 iterations × 10 threads)"
+./gradlew runStoreALot
+echo "✓ Load test passed - ArrayList-based pool is thread-safe"

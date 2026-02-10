@@ -4,7 +4,7 @@ A Java client library for **MogileFS**, a distributed file storage system.
 
 ## Quick Start
 
-**Run all tests:**
+**Run all tests (JUnit + load test):**
 
 ```bash
 ./scripts/run-full-test.sh
@@ -13,7 +13,8 @@ A Java client library for **MogileFS**, a distributed file storage system.
 **Run tests directly:**
 
 ```bash
-./gradlew test
+./gradlew test            # JUnit integration tests
+./gradlew runStoreALot    # Concurrent load test (1,000 operations)
 ```
 
 ## What You Need
@@ -110,7 +111,13 @@ All tests use **JUnit 5** and run via `./gradlew test`:
 
 - **TestBackend** - Validates tracker connection and error handling
 - **TestMogileFS** - Validates file storage/retrieval lifecycle
-- **StoreALot** - Validates concurrent storage operations (load test)
+
+**Concurrent load test** runs via `./gradlew runStoreALot`:
+
+- **StoreALot** - Stress test: 1,000 concurrent file operations (100 iterations × 10 threads)
+  - Verifies thread-safe ArrayList-based connection pooling
+  - Confirms no `ConcurrentModificationException` under load
+  - Measures throughput (ops/sec)
 
 ## Documentation
 
