@@ -42,3 +42,21 @@ jar {
     archiveFileName = "mogilefs-${version}.jar"
     from sourceSets.main.output
 }
+
+// Task to run StoreALot load test tool
+tasks.register('runStoreALot', JavaExec) {
+    group = 'verification'
+    description = 'Run concurrent load test to verify thread-safe connection pooling'
+    classpath = sourceSets.test.runtimeClasspath + sourceSets.main.runtimeClasspath
+    mainClass = 'com.guba.mogilefs.test.StoreALot'
+    
+    // Default arguments can be overridden from command line
+    // Usage: ./gradlew runStoreALot --args="100 10"
+    // First arg: iterations per thread (default 100)
+    // Second arg: thread count (default 10)
+    if (project.hasProperty('args')) {
+        args = project.property('args').toString().split(',').collect { it.trim() }
+    } else {
+        args = ['100', '10']
+    }
+}

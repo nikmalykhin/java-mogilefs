@@ -12,9 +12,9 @@ import org.apache.log4j.Logger;
 
 public class LocalFileMogileFSImpl implements MogileFS {
 
-    private Logger log = Logger.getLogger(LocalFileMogileFSImpl.class);
+    private static final Logger log = Logger.getLogger(LocalFileMogileFSImpl.class);
 
-    private File topDir;
+    private final File topDir;
 
     private String domain;
     private File domainDir;
@@ -64,24 +64,16 @@ public class LocalFileMogileFSImpl implements MogileFS {
             throws MogileException {
         File storedFile = new File(domainDir, key);
 
-        try {
-            FileOutputStream out = new FileOutputStream(storedFile);
-            FileInputStream in = new FileInputStream(file);
-
+        try (FileInputStream in = new FileInputStream(file);
+                FileOutputStream out = new FileOutputStream(storedFile)) {
             byte[] buffer = new byte[1024];
-            int count = 0;
+            int count;
             while ((count = in.read(buffer)) >= 0) {
                 out.write(buffer, 0, count);
             }
-
-            out.close();
-            in.close();
-
         } catch (IOException e) {
-
             throw new StorageCommunicationException(e.getMessage());
         }
-
     }
 
     public File getFile(String key, File destination)
@@ -89,23 +81,15 @@ public class LocalFileMogileFSImpl implements MogileFS {
             IOException, StorageCommunicationException {
         File storedFile = new File(domainDir, key);
 
-        try {
-            FileOutputStream out = new FileOutputStream(destination);
-            FileInputStream in = new FileInputStream(storedFile);
-
+        try (FileInputStream in = new FileInputStream(storedFile);
+                FileOutputStream out = new FileOutputStream(destination)) {
             byte[] buffer = new byte[1024];
-            int count = 0;
+            int count;
             while ((count = in.read(buffer)) >= 0) {
                 out.write(buffer, 0, count);
             }
-
-            out.close();
-            in.close();
-
             return destination;
-
         } catch (IOException e) {
-
             throw new StorageCommunicationException(e.getMessage());
         }
     }
