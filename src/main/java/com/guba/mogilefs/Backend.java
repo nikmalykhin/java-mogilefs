@@ -36,7 +36,7 @@ public class Backend {
 
     private static Logger log = Logger.getLogger(Backend.class);
 
-    private List hosts;
+    private List<InetSocketAddress> hosts;
 
     private Map<InetSocketAddress, Long> deadHosts;
 
@@ -69,7 +69,7 @@ public class Backend {
      * @throws BadHostFormatException
      */
 
-    public Backend(List trackers, boolean connectNow)
+    public Backend(List<InetSocketAddress> trackers, boolean connectNow)
             throws NoTrackersException {
         reload(trackers, connectNow);
     }
@@ -84,14 +84,14 @@ public class Backend {
      * @throws BadHostFormatException
      */
 
-    public void reload(List trackers, boolean connectNow)
+    public void reload(List<InetSocketAddress> trackers, boolean connectNow)
             throws NoTrackersException {
         this.hosts = trackers;
 
-        if (hosts.size() == 0)
+        if (hosts.isEmpty())
             throw new NoTrackersException();
 
-        this.deadHosts = new HashMap<InetSocketAddress, Long>();
+        this.deadHosts = new HashMap<>();
 
         this.lastErr = null;
         this.lastErrStr = null;
@@ -117,8 +117,7 @@ public class Backend {
 
         long now = System.currentTimeMillis();
         while (tries-- > 0) {
-            InetSocketAddress host = (InetSocketAddress) hosts.get(index++
-                    % hostSize);
+            InetSocketAddress host = hosts.get(index++ % hostSize);
 
             // try dead hosts every 5 seconds
             Long deadTime = (Long) deadHosts.get(host);
@@ -302,15 +301,12 @@ public class Backend {
      */
 
     private String listKnownTrackers() {
-        StringBuffer trackers = new StringBuffer();
-        Iterator it = hosts.iterator();
-        while (it.hasNext()) {
-            InetSocketAddress host = (InetSocketAddress) it.next();
-
+        StringBuilder trackers = new StringBuilder();
+        hosts.forEach(host -> {
             if (trackers.length() > 0)
                 trackers.append(", ");
             trackers.append(host.toString());
-        }
+        });
 
         return trackers.toString();
     }
@@ -356,7 +352,7 @@ public class Backend {
      */
 
     private Map<String, String> decodeURLString(String encoded) {
-        HashMap<String, String> map = new HashMap<String, String>();
+        Map<String, String> map = new HashMap<>();
         try {
             if ((encoded == null) || (encoded.length() == 0))
                 return map;
