@@ -24,7 +24,6 @@ public class StoreALot {
     private static final Logger log = Logger.getLogger(StoreALot.class);
     private static final String DOCKER_TRACKER = "qbert.guba.com:7001";
     private static final String DOMAIN = "www.guba.com";
-    private static final String STORAGE_CLASS = "oneDeviceTest";
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();

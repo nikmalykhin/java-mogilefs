@@ -56,14 +56,21 @@ bash "$PROJECT_ROOT/scripts/setup-integration-tests.sh"
 
 # Step 3: Wait for domain auto-initialization
 echo ""
-echo "[3/4] Waiting for domain auto-initialization..."
-for i in {1..10}; do
-    if docker exec mogilefs-infra mogadm --trackers=localhost:7001 class list 2>/dev/null | grep -q "www.guba.com"; then
-        echo "✓ Domain initialized successfully"
-        break
-    fi
-    sleep 2
-done
+echo "[3/5] Initializing MogileFS domain..."
+sleep 5  # Give tracker time to fully start
+
+# Initialize domain (idempotent - safe to run multiple times)
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 domain add www.guba.com 2>/dev/null || true
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 class add www.guba.com oneDeviceTest 2>/dev/null || true
+docker exec mogilefs-infra mogadm --trackers=localhost:7001 class modify www.guba.com oneDeviceTest --mindevcount=1 2>/dev/null || true
+
+# Verify domain initialization
+if docker exec mogilefs-infra mogadm --trackers=localhost:7001 class list 2>/dev/null | grep -q "www.guba.com"; then
+    echo "✓ Domain initialized successfully"
+else
+    echo "ERROR: Domain initialization failed"
+    exit 1
+fi
 
 # Step 4: Run integration tests from host
 echo ""
