@@ -1,0 +1,25 @@
+Ran terminal command:  export DOCKER_HOST=unix://"$HOME"/.colima/default/docker.sock && docker run --name test-mogilefs -d -p 7001:7001 -p 7500:7500 -e MOGILE_ADMIN_PASSWORD=admin hrchu/mogilefs-all-in-one:latest && echo "Container started with ID: $(docker ps -q -f name=test-mogilefs)"
+
+Good! Container started. Now let's wait and check its health: 
+
+Ran terminal command:  export DOCKER_HOST=unix://"$HOME"/.colima/default/docker.sock && sleep 30 && docker ps -f name=test-mogilefs --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+Perfect! Container is UP. Now let's test if the port is actually listening: 
+
+Ran terminal command:  export DOCKER_HOST=unix://"$HOME"/.colima/default/docker.sock && nc -zv localhost 7001 && echo "SUCCESS: Port 7001 is open!"
+
+Terminal got corrupted. Let me try a simpler test: 
+
+Ran terminal command:  export DOCKER_HOST=unix://"$HOME"/.colima/default/docker.sock && docker exec test-mogilefs echo "Container is ready"
+
+Terminal is stuck. Let me open a new one: 
+
+Ran terminal command:  ps aux | grep docker | grep test-mogilefs
+
+Good, terminal is working again. The container should still be running. Let me verify and then run a simple Java test manually against it: 
+
+Ran terminal command:  export DOCKER_HOST=unix://"$HOME"/.colima/default/docker.sock && docker ps | grep test-mogilefs
+
+Perfect! Container is running. Now let's run the tests against this running container WITHOUT using TestContainers. Let me modify `AbstractIntegrationTest` to connect to the already-running container on localhost:7001 instead of starting its own: 
+
+Using "Replace String in File"
