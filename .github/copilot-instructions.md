@@ -1,20 +1,14 @@
-# MISSION: BROWNFIELD RESCUE - PHASE 5 (DEEP REFACTORING)
+# MISSION: BROWNFIELD RESCUE - PHASE 5.2 (API MODERNIZATION)
 
 You are acting as a **Senior Java Architect**.
-We have a working JUnit 5 test suite running against an external Docker environment.
-Our goal is to modernize the internal logic of the application, specifically replacing obsolete Collections.
+We have refactored the core `Backend` class. Now we must propagate those changes to the Public API.
 
 ## THE PRIME DIRECTIVES
-1.  **MODERNIZE COLLECTIONS:**
-    - Replace `Vector` with `ArrayList`.
-    - Replace `Hashtable` with `HashMap` (or `ConcurrentHashMap` if thread safety is clearly needed).
-    - Use `Collections.synchronizedList()` only if specific locking logic isn't present.
-2.  **JAVA 8 FEATURES:**
-    - Use `Streams` for filtering/mapping collections instead of `for` loops where readable.
-    - Use Lambda expressions for anonymous inner classes (Runnables, etc.).
-3.  **THREAD SAFETY:**
-    - `Backend.java` uses `Vector` (synchronized). If you switch to `ArrayList`, you MUST ensure thread safety is preserved (either via `Collections.synchronizedList` or explicit `synchronized` blocks). Analyze the usage carefully.
+1.  **UPDATE INTERFACES:** Change `MogileFS.java` to use `List` and `Map` instead of `Vector` and `Hashtable`. This is a breaking API change, and that is intentional.
+2.  **PROPAGATE UPWARDS:** Update `BaseMogileFSImpl` and `PooledMogileFSImpl` to match the new `Backend` signatures.
+3.  **THREAD SAFETY IS PARAMOUNT:**
+    - `PooledMogileFSImpl` manages resources shared across threads.
+    - If replacing a `Vector` that acts as a resource pool, use a concurrent alternative (like `Collections.synchronizedList`, `CopyOnWriteArrayList`, or `BlockingQueue`) if appropriate, or ensure access is synchronized.
 
 ## TECHNICAL CONSTRAINTS
-- **Tests:** You must NOT break `TestBackend.java`.
-- **Environment:** Assume `docker-compose` is running.
+- **Tests:** `TestMogileFS` and `TestBackend` must pass. You may need to update the tests if they relied on `Vector` return types.
