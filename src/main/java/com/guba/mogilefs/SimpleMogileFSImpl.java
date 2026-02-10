@@ -59,6 +59,7 @@ public class SimpleMogileFSImpl extends BaseMogileFSImpl {
 			public void returnObject(Backend obj) {
 			}
 
+			@SuppressWarnings("deprecation")
 			public void setFactory(PoolableObjectFactory<Backend> factory) {
 			}
 		};
