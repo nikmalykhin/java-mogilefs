@@ -16,7 +16,6 @@ import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.channels.IllegalBlockingModeException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -179,7 +178,7 @@ public class Backend {
      * @return null on error, otherwise results of command
      */
 
-    public Map doRequest(String command, String[] args)
+    public Map<String, String> doRequest(String command, String[] args)
             throws NoTrackersException, TrackerCommunicationException {
         if ((command == null) || (args == null)) {
             log.error("null command or args sent to doRequest");
@@ -469,16 +468,6 @@ class SocketWithReaderAndWriter {
                 // ignore
             }
         }
-    }
-
-    /**
-     * Make sure we close out any open connections
-     * 
-     */
-
-    @SuppressWarnings("removal")
-    protected void finalize() {
-        close();
     }
 
     /**

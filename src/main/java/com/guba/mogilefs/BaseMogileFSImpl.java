@@ -123,7 +123,7 @@ public abstract class BaseMogileFSImpl implements MogileFS {
 			// get a backend
 			backend = borrowBackend();
 
-			Map response = backend.doRequest("create_open", new String[] {
+			Map<String, String> response = backend.doRequest("create_open", new String[] {
 					"domain", domain, "class", storageClass, "key", key });
 
 			if (response == null) {
@@ -198,7 +198,7 @@ public abstract class BaseMogileFSImpl implements MogileFS {
 			try {
 				backend = borrowBackend();
 
-				Map response = backend.doRequest("create_open", new String[] {
+				Map<String, String> response = backend.doRequest("create_open", new String[] {
 						"domain", domain, "class", storageClass, "key", key });
 
 				if (response == null) {
@@ -531,7 +531,7 @@ public abstract class BaseMogileFSImpl implements MogileFS {
 			try {
 				backend = borrowBackend();
 
-				Map response = backend.doRequest("get_paths", new String[] { "domain",
+				Map<String, String> response = backend.doRequest("get_paths", new String[] { "domain",
 						domain, "key", key, "noverify", (noverify ? "1" : "0") });
 
 				if (response == null) {
@@ -579,13 +579,13 @@ public abstract class BaseMogileFSImpl implements MogileFS {
 
 	Backend borrowBackend() throws NoTrackersException {
 		try {
-			ObjectPool backendPool = getBackendPool();
+			ObjectPool<Backend> backendPool = getBackendPool();
 
 			if (log.isDebugEnabled())
 				log.debug("getting backend (active: " + backendPool.getNumActive() + ", idle: "
 						+ backendPool.getNumIdle() + ")");
 
-			final Backend backend = (Backend) backendPool.borrowObject();
+			final Backend backend = backendPool.borrowObject();
 
 			if (log.isDebugEnabled())
 				log.debug("got backend (active: " + backendPool.getNumActive() + ", idle: " + backendPool.getNumIdle()

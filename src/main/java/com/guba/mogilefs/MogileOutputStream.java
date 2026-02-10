@@ -155,7 +155,7 @@ public class MogileOutputStream extends OutputStream {
         try {
             backend = borrowBackend();
 
-            Map closeResponse = backend.doRequest("create_close", new String[] {
+            Map<String, String> closeResponse = backend.doRequest("create_close", new String[] {
                     "fid", fid, "devid", devid, "domain", domain, "size",
                     Long.toString(totalBytes), "key", key, "path", path });
 
