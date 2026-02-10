@@ -175,7 +175,7 @@ class StoreSomething implements Runnable {
 
         try {
             for (int i = 0; i < iterations; i++) {
-                String key = "loadtest-" + currentThread.getId() + "-" + System.nanoTime();
+                String key = "loadtest-" + System.identityHashCode(currentThread) + "-" + System.nanoTime();
                 try {
                     mfs.storeFile(key, "oneDeviceTest", file);
                     successCount.incrementAndGet();
